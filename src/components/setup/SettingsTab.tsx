@@ -90,10 +90,10 @@ export const SettingsTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Banner */}
-      <div className="glass-panel rounded-2xl p-6 border border-slate-800/80">
-        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+      <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-800/80">
+        <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
           <Server className="w-5 h-5 text-blue-400" />
           Router Connection & Profile Configuration
         </h2>
@@ -102,9 +102,9 @@ export const SettingsTab: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Profile List Column */}
-        <div className="glass-panel rounded-2xl p-4 border border-slate-800/80 space-y-3">
+        <div className="glass-panel rounded-2xl p-3 sm:p-4 border border-slate-800/80 space-y-3">
           <div className="flex items-center justify-between px-2 mb-2">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Saved Profiles
@@ -151,7 +151,7 @@ export const SettingsTab: React.FC = () => {
         </div>
 
         {/* Profile Editor Form */}
-        <div className="glass-panel rounded-2xl p-6 border border-slate-800/80 lg:col-span-2 space-y-6">
+        <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-800/80 lg:col-span-2 space-y-6">
           <form onSubmit={handleSave} className="space-y-5">
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
               <div>

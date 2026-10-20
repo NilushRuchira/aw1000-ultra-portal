@@ -6,11 +6,12 @@ import {
   Terminal,
   Settings,
   Cpu,
+  X,
 } from 'lucide-react';
 import { useRouterStore, type NavigationTab } from '../../store/useRouterStore';
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, systemInfo, connectedDevices } = useRouterStore();
+  const { activeTab, setActiveTab, systemInfo, connectedDevices, mobileMenuOpen, setMobileMenuOpen } = useRouterStore();
 
   const navItems = [
     {
@@ -45,13 +46,19 @@ export const Sidebar: React.FC = () => {
     },
   ];
 
-  return (
-    <aside className="w-64 glass-panel border-r border-slate-800/80 flex flex-col justify-between p-4 shrink-0 h-[calc(100vh-4rem)]">
+  const sidebarContent = (
+    <div className="flex flex-col justify-between h-full p-4">
       <div className="space-y-6">
         {/* Navigation links */}
         <div className="space-y-1">
-          <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-            Router Management
+          <div className="flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <span>Router Management</span>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="md:hidden text-slate-400 hover:text-white p-1 rounded-lg"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -59,7 +66,10 @@ export const Sidebar: React.FC = () => {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
                   isActive
                     ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-xs shadow-blue-500/10'
@@ -123,6 +133,28 @@ export const Sidebar: React.FC = () => {
           <span className="font-mono text-blue-400">uBus + Dropbear</span>
         </div>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 glass-panel border-r border-slate-800/80 flex-col shrink-0 h-[calc(100vh-4rem)]">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Drawer Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="relative w-72 max-w-[80vw] h-full bg-[#090d16] border-r border-slate-800 z-50 shadow-2xl flex flex-col">
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+    </>
   );
 };

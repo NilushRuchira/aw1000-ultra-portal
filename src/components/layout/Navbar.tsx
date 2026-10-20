@@ -10,6 +10,8 @@ import {
   Layers,
   ChevronDown,
   RotateCcw,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useProfileStore } from '../../store/useProfileStore';
 import { useRouterStore } from '../../store/useRouterStore';
@@ -22,7 +24,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings }) => {
   const { profiles, activeProfile, setActiveProfile, protocolStatus, isTesting, testCurrentConnection } =
     useProfileStore();
-  const { systemInfo, fetchRouterData, isFallbackSsh } = useRouterStore();
+  const { systemInfo, fetchRouterData, isFallbackSsh, mobileMenuOpen, setMobileMenuOpen } = useRouterStore();
   const [powerModalOpen, setPowerModalOpen] = useState(false);
   const [powerAction, setPowerAction] = useState<'reboot' | 'restart_network' | 'restart_uhttpd' | null>(null);
   const [powerExecuting, setPowerExecuting] = useState(false);
@@ -65,69 +67,80 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings }) => {
   const getStatusBadge = () => {
     if (isTesting) {
       return (
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse">
-          <RefreshCw className="w-3 h-3 animate-spin" />
-          Probing Router...
+        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse">
+          <RefreshCw className="w-3 h-3 animate-spin shrink-0" />
+          <span className="hidden sm:inline">Probing Router...</span>
         </span>
       );
     }
 
     if (protocolStatus?.ubusAvailable && protocolStatus?.sshAvailable) {
       return (
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-xs shadow-emerald-500/20">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          Dual-Protocol Active
+        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+          <span className="hidden sm:inline">Dual-Protocol Active</span>
+          <span className="sm:hidden text-[11px]">Online</span>
         </span>
       );
     }
 
     if (isFallbackSsh || protocolStatus?.sshAvailable) {
       return (
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-          <Terminal className="w-3 h-3" />
-          SSH Active (uBus Fallback)
+        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <Terminal className="w-3 h-3 shrink-0" />
+          <span className="hidden sm:inline">SSH Active</span>
+          <span className="sm:hidden text-[11px]">SSH</span>
         </span>
       );
     }
 
     if (protocolStatus && !protocolStatus.ubusAvailable && !protocolStatus.sshAvailable) {
       return (
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-          <AlertTriangle className="w-3 h-3" />
-          Offline / Unreachable
+        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+          <AlertTriangle className="w-3 h-3 shrink-0" />
+          <span className="hidden sm:inline">Offline</span>
         </span>
       );
     }
 
     return (
-      <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-        Online (AW1000)
+      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+        <span className="hidden sm:inline">Online</span>
       </span>
     );
   };
 
   return (
     <>
-      <header className="h-16 px-6 glass-panel border-b border-slate-800/80 flex items-center justify-between sticky top-0 z-30">
+      <header className="h-16 px-4 md:px-6 glass-panel border-b border-slate-800/80 flex items-center justify-between sticky top-0 z-30">
         {/* Left: Router Brand and Host Info */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <RouterIcon className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Mobile Menu Hamburger */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60"
+            aria-label="Toggle navigation drawer"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+            <RouterIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-bold text-base tracking-tight text-white flex items-center gap-1.5">
-                Arcadyan AW1000_Ultra
-                <span className="text-[10px] uppercase font-mono tracking-wider px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                  Filogic 830
-                </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h1 className="font-bold text-sm sm:text-base tracking-tight text-white truncate">
+                AW1000<span className="hidden sm:inline">_Ultra</span>
               </h1>
+              <span className="hidden sm:inline text-[10px] uppercase font-mono tracking-wider px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                Filogic 830
+              </span>
             </div>
-            <p className="text-xs text-slate-400 flex items-center gap-2 font-mono">
-              <span>{activeProfile.host}:{activeProfile.httpPort}</span>
+            <p className="text-[11px] text-slate-400 flex items-center gap-1.5 font-mono truncate">
+              <span className="truncate">{activeProfile.host}</span>
               <span className="text-slate-600">•</span>
-              <span className="text-slate-400">{systemInfo?.release?.version || 'OpenWrt 23.05'}</span>
+              <span className="text-slate-400 truncate">{systemInfo?.release?.version || 'OpenWrt'}</span>
             </p>
           </div>
         </div>
@@ -148,22 +161,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings }) => {
         )}
 
         {/* Right: Actions, Status & Profile Selector */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {getStatusBadge()}
 
           {/* Profile Dropdown */}
           <div className="relative">
             <button
               onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-xs text-slate-200 transition-colors"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-xs text-slate-200 transition-colors"
             >
-              <Server className="w-3.5 h-3.5 text-blue-400" />
-              <span className="max-w-[120px] truncate font-medium">{activeProfile.name}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <Server className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+              <span className="max-w-[70px] sm:max-w-[120px] truncate font-medium">{activeProfile.name}</span>
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
             </button>
 
             {profileDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 glass-panel rounded-xl shadow-2xl p-1.5 z-50 border border-slate-700">
+              <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] glass-panel rounded-xl shadow-2xl p-1.5 z-50 border border-slate-700">
                 <div className="px-3 py-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                   Saved Profiles
                 </div>
@@ -203,7 +216,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings }) => {
           <button
             onClick={() => fetchRouterData()}
             title="Refresh Router Metrics"
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 sm:p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-slate-300 hover:text-white transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -212,7 +225,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings }) => {
           <button
             onClick={() => setPowerModalOpen(true)}
             title="Router Power & Service Actions"
-            className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-colors"
+            className="p-1.5 sm:p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-colors"
           >
             <Power className="w-4 h-4" />
           </button>
@@ -222,13 +235,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings }) => {
       {/* Power Confirmation Modal */}
       {powerModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-panel w-full max-w-md rounded-2xl p-6 border border-slate-700/80 shadow-2xl">
+          <div className="glass-panel w-full max-w-md rounded-2xl p-5 sm:p-6 border border-slate-700/80 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3 text-rose-400 mb-4">
-              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 shrink-0">
                 <Power className="w-5 h-5 text-rose-400" />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-white">Router Power Actions</h3>
+                <h3 className="font-bold text-base sm:text-lg text-white">Router Power Actions</h3>
                 <p className="text-xs text-slate-400">Perform maintenance commands on Arcadyan AW1000</p>
               </div>
             </div>
@@ -299,7 +312,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings }) => {
                 disabled={!powerAction || powerExecuting}
                 className="px-5 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 transition-all disabled:opacity-50"
               >
-                {powerExecuting ? 'Executing Command...' : 'Confirm Action'}
+                {powerExecuting ? 'Executing...' : 'Confirm Action'}
               </button>
             </div>
           </div>

@@ -26,9 +26,11 @@ interface RouterState {
   isFallbackSsh: boolean;
   lastUpdated: number;
   editingWifi: WifiSSID | null;
+  mobileMenuOpen: boolean;
 
   setActiveTab: (tab: NavigationTab) => void;
   setEditingWifi: (wifi: WifiSSID | null) => void;
+  setMobileMenuOpen: (open: boolean) => void;
   fetchRouterData: () => Promise<void>;
   updateWifiSetting: (device: string, ifname: string, newSsid: string, newKey?: string) => Promise<boolean>;
 }
@@ -44,9 +46,11 @@ export const useRouterStore = create<RouterState>((set, get) => ({
   isFallbackSsh: false,
   lastUpdated: 0,
   editingWifi: null,
+  mobileMenuOpen: false,
 
-  setActiveTab: (tab: NavigationTab) => set({ activeTab: tab }),
+  setActiveTab: (tab: NavigationTab) => set({ activeTab: tab, mobileMenuOpen: false }),
   setEditingWifi: (wifi: WifiSSID | null) => set({ editingWifi: wifi }),
+  setMobileMenuOpen: (open: boolean) => set({ mobileMenuOpen: open }),
 
   fetchRouterData: async () => {
     const profile = useProfileStore.getState().activeProfile;

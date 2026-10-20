@@ -106,11 +106,11 @@ export const ConnectedDevicesTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Controls: Search, Filter, Refresh */}
-      <div className="glass-panel rounded-2xl p-4 border border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel rounded-2xl p-3 sm:p-4 border border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
         {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           <input
             type="text"
@@ -122,8 +122,8 @@ export const ConnectedDevicesTab: React.FC = () => {
         </div>
 
         {/* Band Filters */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 flex items-center gap-1 mr-1">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0">
+          <span className="text-xs text-slate-400 hidden sm:flex items-center gap-1 mr-1 shrink-0">
             <Filter className="w-3.5 h-3.5" />
             Band:
           </span>
@@ -131,7 +131,7 @@ export const ConnectedDevicesTab: React.FC = () => {
             <button
               key={b}
               onClick={() => setBandFilter(b)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
                 bandFilter === b
                   ? 'bg-blue-600 text-white shadow-xs shadow-blue-500/20'
                   : 'bg-slate-800/80 text-slate-400 hover:text-slate-200'
@@ -143,7 +143,7 @@ export const ConnectedDevicesTab: React.FC = () => {
 
           <button
             onClick={() => fetchRouterData()}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 ml-2"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0"
             title="Refresh Client Table"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -172,8 +172,77 @@ export const ConnectedDevicesTab: React.FC = () => {
         </div>
       )}
 
-      {/* Client Table */}
-      <div className="glass-panel rounded-2xl border border-slate-800/80 overflow-hidden">
+      {/* Mobile Card-Based Client List (< 768px) */}
+      <div className="md:hidden space-y-3">
+        {sortedDevices.map((dev) => (
+          <div
+            key={dev.mac}
+            className="glass-panel rounded-xl p-4 border border-slate-800/80 space-y-3"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                  <Laptop2 className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-white text-xs truncate">{dev.hostname}</div>
+                  <div className="text-[10px] text-slate-400 truncate">{dev.vendor || 'Unknown Vendor'}</div>
+                </div>
+              </div>
+
+              <span
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-medium shrink-0 ${
+                  dev.band === '6 GHz'
+                    ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                    : dev.band === '5 GHz'
+                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                    : dev.band === '2.4 GHz'
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    : 'bg-slate-800 text-slate-300 border border-slate-700'
+                }`}
+              >
+                {dev.band}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60">
+              <div>
+                <span className="text-[10px] text-slate-500 block uppercase">IP Address</span>
+                <div className="flex items-center gap-1.5 text-slate-200 mt-0.5">
+                  <span className="truncate">{dev.ip}</span>
+                  <button onClick={() => copyToClipboard(dev.ip)} className="text-slate-500">
+                    {copiedText === dev.ip ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[10px] text-slate-500 block uppercase">MAC Address</span>
+                <div className="flex items-center gap-1.5 text-slate-400 mt-0.5">
+                  <span className="truncate">{dev.mac}</span>
+                  <button onClick={() => copyToClipboard(dev.mac)} className="text-slate-500">
+                    {copiedText === dev.mac ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800/60">
+              <div>{getSignalBadge(dev.signalDbm)}</div>
+              <button
+                onClick={() => handlePing(dev.ip)}
+                disabled={isPinging}
+                className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono"
+              >
+                Ping
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Client Table (>= 768px) */}
+      <div className="hidden md:block glass-panel rounded-2xl border border-slate-800/80 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -312,13 +381,13 @@ export const ConnectedDevicesTab: React.FC = () => {
             </tbody>
           </table>
         </div>
-
-        {sortedDevices.length === 0 && (
-          <div className="py-12 text-center text-slate-500 text-xs">
-            No devices found matching filter criteria.
-          </div>
-        )}
       </div>
+
+      {sortedDevices.length === 0 && (
+        <div className="py-12 text-center text-slate-500 text-xs">
+          No devices found matching filter criteria.
+        </div>
+      )}
     </div>
   );
 };

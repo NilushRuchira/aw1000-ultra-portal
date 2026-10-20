@@ -62,50 +62,50 @@ export const OverviewTab: React.FC = () => {
   const flashPercent = totalFlashMb ? Math.round((usedFlashMb / totalFlashMb) * 100) : 15;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Banner: Router Hardware & OpenWrt Release */}
-      <div className="glass-panel rounded-2xl p-6 border border-slate-800/80 relative overflow-hidden">
+      <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-800/80 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-96 bg-gradient-to-l from-blue-600/10 via-cyan-500/5 to-transparent pointer-events-none" />
 
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6 relative z-10">
           <div>
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5 mb-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 MediaTek MT7986A Filogic 830
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 Wi-Fi 6E Tri-Band
               </span>
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               {systemInfo?.model || 'Arcadyan AW1000_Ultra'}
             </h2>
-            <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
+            <p className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="font-mono">{systemInfo?.release?.description || 'OpenWrt 23.05.3'}</span>
               <span>•</span>
               <span className="font-mono">Linux {systemInfo?.kernel || '5.15.150'}</span>
-              <span>•</span>
-              <span>Host: <span className="font-mono text-slate-300">{systemInfo?.hostname || 'OpenWrt'}</span></span>
+              <span className="hidden sm:inline">•</span>
+              <span className="hidden sm:inline">Host: <span className="font-mono text-slate-300">{systemInfo?.hostname || 'OpenWrt'}</span></span>
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="glass-card rounded-xl p-3 border border-slate-700/60 min-w-[140px]">
+          <div className="grid grid-cols-2 sm:flex items-center gap-2.5 sm:gap-4">
+            <div className="glass-card rounded-xl p-3 border border-slate-700/60 min-w-[120px] sm:min-w-[140px]">
               <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mb-1">
                 <Clock className="w-3.5 h-3.5 text-blue-400" />
                 Uptime
               </div>
-              <div className="text-base font-bold font-mono text-white">
+              <div className="text-sm sm:text-base font-bold font-mono text-white truncate">
                 {systemInfo ? formatUptime(systemInfo.uptime) : '3d 23h 11m'}
               </div>
             </div>
 
-            <div className="glass-card rounded-xl p-3 border border-slate-700/60 min-w-[140px]">
+            <div className="glass-card rounded-xl p-3 border border-slate-700/60 min-w-[120px] sm:min-w-[140px]">
               <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mb-1">
                 <Globe className="w-3.5 h-3.5 text-emerald-400" />
                 WAN IP
               </div>
-              <div className="text-base font-bold font-mono text-emerald-300 truncate">
+              <div className="text-sm sm:text-base font-bold font-mono text-emerald-300 truncate">
                 {wanInfo?.ip || '198.51.100.42'}
               </div>
             </div>
@@ -393,13 +393,13 @@ export const OverviewTab: React.FC = () => {
       </div>
 
       {/* WAN Details Card */}
-      <div className="glass-panel rounded-2xl p-6 border border-slate-800/80">
+      <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-800/80">
         <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
           <Globe className="w-4 h-4 text-blue-400" />
           WAN Uplink Configuration & Interface Status
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
           <div className="glass-card rounded-xl p-3 border border-slate-700/60">
             <span className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">
               Interface Protocol

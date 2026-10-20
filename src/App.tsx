@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
+import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { OverviewTab } from './components/dashboard/OverviewTab';
 import { WifiManagementTab } from './components/wifi/WifiManagementTab';
 import { ConnectedDevicesTab } from './components/devices/ConnectedDevicesTab';
@@ -59,12 +60,13 @@ const RouterPortalApp: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans selection:bg-blue-500/30 selection:text-blue-200">
       <Navbar onOpenSettings={() => setActiveTab('settings')} />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 pb-20 md:pb-6 max-w-7xl mx-auto w-full">
           {renderActiveTab()}
         </main>
       </div>
+      <MobileBottomNav />
     </div>
   );
 };

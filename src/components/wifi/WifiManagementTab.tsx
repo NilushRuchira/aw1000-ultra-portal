@@ -87,11 +87,11 @@ export const WifiManagementTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Radios Summary Banner */}
-      <div className="glass-panel rounded-2xl p-6 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
             <Radio className="w-5 h-5 text-blue-400" />
             Arcadyan AW1000 Tri-Band Wireless Controller
           </h2>
@@ -108,11 +108,11 @@ export const WifiManagementTab: React.FC = () => {
       </div>
 
       {/* Grid of SSID Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {wifiSSIDs.map((wifi) => (
           <div
             key={wifi.ifname}
-            className="glass-panel rounded-2xl p-6 border border-slate-800/80 hover:border-slate-700 transition-all flex flex-col justify-between"
+            className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-800/80 hover:border-slate-700 transition-all flex flex-col justify-between"
           >
             <div>
               {/* Header */}
@@ -185,7 +185,7 @@ export const WifiManagementTab: React.FC = () => {
       {/* Edit SSID Modal */}
       {editingSsid && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-panel w-full max-w-md rounded-2xl p-6 border border-slate-700/80 shadow-2xl">
+          <div className="glass-panel w-full max-w-md rounded-2xl p-5 sm:p-6 border border-slate-700/80 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2.5 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400">
                 <Wifi className="w-5 h-5" />
