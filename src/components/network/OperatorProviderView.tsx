@@ -68,13 +68,14 @@ export const OperatorProviderView: React.FC = () => {
     await scanAvailableOperators();
   };
 
-  const handleApplyOperator = async (plmn?: string) => {
+  const handleApplyOperator = async (plmn?: string, modeOverride?: 'AUTO' | 'MANUAL') => {
+    const mode = modeOverride || selectionMode;
     const target = plmn || selectedPlmn || customPlmn;
-    if (selectionMode === 'MANUAL' && !target) {
+    if (mode === 'MANUAL' && !target) {
       alert('Please select or enter an operator PLMN.');
       return;
     }
-    await setOperatorSelection(selectionMode, selectionMode === 'MANUAL' ? target : undefined);
+    await setOperatorSelection(mode, mode === 'MANUAL' ? target : undefined);
   };
 
   const activePlmn = status?.operator.plmn || '41302';
@@ -233,7 +234,8 @@ export const OperatorProviderView: React.FC = () => {
                     <button
                       onClick={() => {
                         setSelectionMode('MANUAL');
-                        handleApplyOperator(op.plmn);
+                        setSelectedPlmn(op.plmn);
+                        handleApplyOperator(op.plmn, 'MANUAL');
                       }}
                       disabled={isLoading}
                       className="px-3.5 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"

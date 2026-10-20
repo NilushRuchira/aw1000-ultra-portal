@@ -3,8 +3,8 @@ pub mod models;
 
 use commands::{
     cellular::{
-        get_cellular_status, get_neighbor_cells, manage_apn, scan_operators, set_band_lock,
-        set_cell_lock, set_operator_mode,
+        get_band_lock, get_cell_lock, get_cellular_status, get_neighbor_cells, manage_apn,
+        scan_operators, set_band_lock, set_cell_lock, set_operator_mode,
     },
     profile::{delete_profile, get_profiles, save_profile},
     ssh::{
@@ -42,6 +42,8 @@ pub fn run() {
             delete_profile,
             get_cellular_status,
             get_neighbor_cells,
+            get_cell_lock,
+            get_band_lock,
             set_cell_lock,
             set_band_lock,
             scan_operators,

@@ -195,7 +195,9 @@ class MockCellularEngine {
         pinRequired: false,
         slot: 1,
       },
-      technology: this.bandLock.modePreference === 'LTE_ONLY' ? 'LTE-A' : '5G SA',
+      technology: this.cellLock.enabled
+        ? (this.cellLock.technology === 'NR5G' ? '5G SA' : 'LTE-A')
+        : (this.bandLock.modePreference === 'LTE_ONLY' ? 'LTE-A' : this.bandLock.modePreference === '5G_NSA' ? '5G NSA' : '5G SA'),
       signal: {
         rsrp: -78 + rsrpJitter,
         rsrq: -9,
@@ -205,10 +207,18 @@ class MockCellularEngine {
         bars: 5,
       },
       pcc: {
-        band: 'n78',
-        bandName: '3500 MHz (C-Band High Capacity)',
-        earfcn: 627340,
-        bandwidthMhz: 100,
+        band: this.cellLock.enabled
+          ? (this.cellLock.band || (this.cellLock.technology === 'NR5G' ? 'n78' : 'B3'))
+          : (this.bandLock.modePreference === 'LTE_ONLY' ? (this.bandLock.lockedLteBands[0] || 'B40') : 'n78'),
+        bandName: this.cellLock.enabled
+          ? `${this.cellLock.band || (this.cellLock.technology === 'NR5G' ? 'n78' : 'B3')} (Locked Primary Cell)`
+          : (this.bandLock.modePreference === 'LTE_ONLY' ? '2300 MHz (TDD LTE-A)' : '3500 MHz (C-Band High Capacity)'),
+        earfcn: this.cellLock.enabled
+          ? (this.cellLock.earfcn || (this.cellLock.technology === 'NR5G' ? 627340 : 1650))
+          : (this.bandLock.modePreference === 'LTE_ONLY' ? 39150 : 627340),
+        bandwidthMhz: this.cellLock.enabled
+          ? (this.cellLock.band?.startsWith('n') ? 100 : 20)
+          : (this.bandLock.modePreference === 'LTE_ONLY' ? 20 : 100),
         pci: this.cellLock.enabled ? (this.cellLock.pci || 384) : 384,
         cellId: '0x4A82F1',
         tac: '0x19B4',
@@ -245,17 +255,46 @@ class MockCellularEngine {
       },
       carrierAggregation: {
         active: true,
-        mode: '3CA (n78 [100M] + B40 [20M] + B3 [20M])',
-        totalBandwidthMhz: 140,
+        mode: (this.cellLock.enabled && this.cellLock.technology === 'LTE') || this.bandLock.modePreference === 'LTE_ONLY'
+          ? '2CA (B40 [20M] + B3 [20M])'
+          : '3CA (n78 [100M] + B40 [20M] + B3 [20M])',
+        totalBandwidthMhz: (this.cellLock.enabled && this.cellLock.technology === 'LTE') || this.bandLock.modePreference === 'LTE_ONLY'
+          ? 40
+          : 140,
       },
     };
   }
 
   public getNeighborCells(): NeighborCell[] {
-    return this.neighborCells.map((c) => ({
-      ...c,
-      isLocked: this.cellLock.enabled && this.cellLock.pci === c.pci && this.cellLock.earfcn === c.earfcn,
-    }));
+    const isLocked = this.cellLock.enabled;
+    const targetEarfcn = this.cellLock.earfcn;
+    const targetPci = this.cellLock.pci;
+
+    const cells: NeighborCell[] = this.neighborCells.map((c) => {
+      const match = isLocked && c.pci === targetPci && c.earfcn === targetEarfcn;
+      return {
+        ...c,
+        isServing: isLocked ? match : c.id === 'cell-pcc',
+        isLocked: match,
+      };
+    });
+
+    if (isLocked && targetPci && targetEarfcn && !cells.some((c) => c.isLocked)) {
+      cells.unshift({
+        id: `cell-custom-${targetPci}-${targetEarfcn}`,
+        type: this.cellLock.technology || 'NR5G',
+        band: this.cellLock.band || 'n78',
+        earfcn: targetEarfcn,
+        pci: targetPci,
+        rsrp: -79,
+        rsrq: -8,
+        sinr: 22.0,
+        isServing: true,
+        isLocked: true,
+      });
+    }
+
+    return cells;
   }
 
   public setCellLock(technology: 'LTE' | 'NR5G', earfcn: number, pci: number, band: string, enable: boolean): CellLockConfig {
@@ -445,6 +484,28 @@ export const cellularApi = {
     return mockCellular.getNeighborCells();
   },
 
+  async getCellLock(profile: RouterProfile): Promise<CellLockConfig> {
+    if (isTauri()) {
+      try {
+        return await safeInvoke<CellLockConfig>('get_cell_lock', { profile });
+      } catch (e) {
+        console.warn('Native get_cell_lock failed, using fallback:', e);
+      }
+    }
+    return mockCellular.getCellLock();
+  },
+
+  async getBandLock(profile: RouterProfile): Promise<BandLockConfig> {
+    if (isTauri()) {
+      try {
+        return await safeInvoke<BandLockConfig>('get_band_lock', { profile });
+      } catch (e) {
+        console.warn('Native get_band_lock failed, using fallback:', e);
+      }
+    }
+    return mockCellular.getBandLock();
+  },
+
   async setCellLock(
     profile: RouterProfile,
     technology: 'LTE' | 'NR5G',
@@ -460,6 +521,7 @@ export const cellularApi = {
           technology,
           earfcn,
           pci,
+          band,
           enable,
         });
       } catch (e) {
@@ -470,8 +532,8 @@ export const cellularApi = {
     return {
       success: true,
       message: enable
-        ? `Successfully locked to ${technology} Band ${band} (EARFCN: ${earfcn}, PCI: ${pci}). Modem rebooting RF frontend.`
-        : 'Cell lock released. Modem returned to automatic handover.',
+        ? `Successfully locked to ${technology} Band ${band} (EARFCN: ${earfcn}, PCI: ${pci}). Modem radio frontend refreshed.`
+        : 'Cell lock released. Modem returned to automatic best-cell handover.',
     };
   },
 

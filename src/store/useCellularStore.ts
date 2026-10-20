@@ -61,8 +61,8 @@ export const useCellularStore = create<CellularState>((set, get) => ({
       const neighbors = await cellularApi.getNeighborCells(profile);
       const analysis = cellularApi.getCellAnalysis(status, neighbors);
       const apns = await cellularApi.getApnProfiles();
-      const cellLock = mockCellular.getCellLock();
-      const bandLock = mockCellular.getBandLock();
+      const cellLock = await cellularApi.getCellLock(profile);
+      const bandLock = await cellularApi.getBandLock(profile);
 
       set({
         status,
@@ -82,9 +82,10 @@ export const useCellularStore = create<CellularState>((set, get) => ({
     set({ isLoading: true });
     try {
       const res = await cellularApi.setCellLock(profile, tech, earfcn, pci, band, enable);
+      const cellLock = await cellularApi.getCellLock(profile);
       set({
         actionMessage: { text: res.message, type: 'success' },
-        cellLock: mockCellular.getCellLock(),
+        cellLock,
         isLoading: false,
       });
       await get().fetchCellularData();
@@ -103,9 +104,10 @@ export const useCellularStore = create<CellularState>((set, get) => ({
     set({ isLoading: true });
     try {
       const res = await cellularApi.setBandLock(profile, config);
+      const bandLock = await cellularApi.getBandLock(profile);
       set({
         actionMessage: { text: res.message, type: 'success' },
-        bandLock: config,
+        bandLock,
         isLoading: false,
       });
       await get().fetchCellularData();
@@ -159,6 +161,7 @@ export const useCellularStore = create<CellularState>((set, get) => ({
         actionMessage: { text: res.message, type: 'success' },
         isLoading: false,
       });
+      await get().fetchCellularData();
       return true;
     } catch (e: unknown) {
       set({

@@ -60,6 +60,14 @@ export const BandLockingPreferencesView: React.FC = () => {
   const [selectedNr, setSelectedNr] = useState<string[]>([...bandLock.lockedNrBands]);
   const [applyResult, setApplyResult] = useState<string | null>(null);
 
+  const [prevBandLock, setPrevBandLock] = useState(bandLock);
+  if (prevBandLock !== bandLock) {
+    setPrevBandLock(bandLock);
+    setModePreference(bandLock.modePreference);
+    setSelectedLte([...bandLock.lockedLteBands]);
+    setSelectedNr([...bandLock.lockedNrBands]);
+  }
+
   const toggleLteBand = (id: string) => {
     setSelectedLte((prev) =>
       prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]

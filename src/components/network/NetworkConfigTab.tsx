@@ -17,7 +17,7 @@ import { ApnManagementView } from './ApnManagementView';
 import { OperatorProviderView } from './OperatorProviderView';
 
 export const NetworkConfigTab: React.FC = () => {
-  const { subTab, setSubTab, status, fetchCellularData, actionMessage, clearMessage } = useCellularStore();
+  const { subTab, setSubTab, status, cellLock, bandLock, fetchCellularData, actionMessage, clearMessage } = useCellularStore();
 
   useEffect(() => {
     fetchCellularData();
@@ -34,13 +34,15 @@ export const NetworkConfigTab: React.FC = () => {
       id: 'cell_lock' as CellularSubTab,
       label: 'Cell Analysis & Locking',
       icon: Lock,
-      badge: null,
+      badge: cellLock.enabled ? 'LOCKED' : null,
+      badgeColor: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
     },
     {
       id: 'band_lock' as CellularSubTab,
       label: 'Band Locking & Modes',
       icon: Sliders,
-      badge: null,
+      badge: bandLock.modePreference !== 'AUTO' ? bandLock.modePreference : null,
+      badgeColor: 'bg-purple-500/20 text-purple-400 border border-purple-500/30',
     },
     {
       id: 'apn' as CellularSubTab,
@@ -124,7 +126,7 @@ export const NetworkConfigTab: React.FC = () => {
               <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-400' : 'text-slate-500'}`} />
               <span>{tab.label}</span>
               {tab.badge && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-300 font-mono">
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${tab.badgeColor || 'bg-blue-500/20 text-blue-300'}`}>
                   {tab.badge}
                 </span>
               )}
