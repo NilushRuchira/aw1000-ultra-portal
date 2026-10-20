@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  Radio,
   Wifi,
   Laptop2,
   Terminal,
@@ -21,8 +22,14 @@ export const Sidebar: React.FC = () => {
       badge: null,
     },
     {
+      id: 'network' as NavigationTab,
+      label: 'Cellular 5G / LTE',
+      icon: Radio,
+      badge: '5G SA',
+    },
+    {
       id: 'wifi' as NavigationTab,
-      label: 'Network & Wi-Fi',
+      label: 'Wi-Fi Management',
       icon: Wifi,
       badge: '3 Bands',
     },

@@ -38,6 +38,15 @@ A high-performance, modern cross-platform desktop application built with **Tauri
 - **Profile Manager & Dual-Protocol Tester**:
   - Save, edit, and switch between router profiles with local encrypted persistence.
   - Dual-Protocol connection verification testing both uBus HTTP/S and SSH socket handshakes.
+- **Cellular Network Configurations (5G NR / LTE-A Modem)**:
+  - **Cellular Status & RF Telemetry**: Live Operator PLMN, SIM status (ICCID/IMSI/PIN), technology (5G SA / 5G NSA / LTE-A), Signal quality (RSRP, RSRQ, RSSI, SINR, CQI).
+  - **Detailed PCC & SCC Carrier Aggregation**: Primary carrier (PCC) with EARFCN, bandwidth (MHz), PCI, Cell ID, TAC, and secondary aggregated carriers (SCC 3CA/4CA).
+  - **Spatial MIMO Telemetry**: 4x4 MIMO DL, 2x2 MIMO UL, Rank Indicator (RI = 4), and transmission mode.
+  - **Neighbor Cell Locking Facility**: Scans nearby base station towers, allows 1-click lock or manual EARFCN + PCI sector locking (`AT+QNWLOCK`).
+  - **Automated Cell RF Analysis**: Quality scoring (0-100), co-channel interference detection, PCI collision warning, and actionable RF engineering recommendations.
+  - **Band Locking & Mode Preferences**: 5G SA Only, 5G NSA Only, 5G/4G Auto, LTE Only, with granular 5G NR and LTE band selection matrices.
+  - **APN Profile Management**: Create, edit, and activate cellular PDP contexts with IPv4/IPv6 dual-stack and authentication (PAP/CHAP).
+  - **Operator / Carrier Selection**: Live 3GPP airwave scan (`AT+COPS=?`) with automatic vs manual provider registration.
 
 ---
 

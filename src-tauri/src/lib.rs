@@ -2,6 +2,10 @@ pub mod commands;
 pub mod models;
 
 use commands::{
+    cellular::{
+        get_cellular_status, get_neighbor_cells, manage_apn, scan_operators, set_band_lock,
+        set_cell_lock, set_operator_mode,
+    },
     profile::{delete_profile, get_profiles, save_profile},
     ssh::{
         close_ssh_session, exec_ssh_command, resize_ssh_session, send_ssh_input, start_ssh_session,
@@ -36,6 +40,13 @@ pub fn run() {
             get_profiles,
             save_profile,
             delete_profile,
+            get_cellular_status,
+            get_neighbor_cells,
+            set_cell_lock,
+            set_band_lock,
+            scan_operators,
+            set_operator_mode,
+            manage_apn,
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");

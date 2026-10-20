@@ -1,3 +1,4 @@
+pub mod cellular;
 pub mod profile;
 pub mod ssh;
 pub mod ubus;
