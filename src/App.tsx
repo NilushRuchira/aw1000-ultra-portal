@@ -4,9 +4,11 @@ import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { OverviewTab } from './components/dashboard/OverviewTab';
+import { NetworkConfigTab } from './components/network/NetworkConfigTab';
 import { WifiManagementTab } from './components/wifi/WifiManagementTab';
 import { ConnectedDevicesTab } from './components/devices/ConnectedDevicesTab';
 import { TerminalDiagnosticsTab } from './components/terminal/TerminalDiagnosticsTab';
+import { LogsTab } from './components/logs/LogsTab';
 import { SettingsTab } from './components/setup/SettingsTab';
 import { useRouterStore } from './store/useRouterStore';
 import { useProfileStore } from './store/useProfileStore';
@@ -44,12 +46,16 @@ const RouterPortalApp: React.FC = () => {
     switch (activeTab) {
       case 'overview':
         return <OverviewTab />;
+      case 'network':
+        return <NetworkConfigTab />;
       case 'wifi':
         return <WifiManagementTab />;
       case 'devices':
         return <ConnectedDevicesTab />;
       case 'terminal':
         return <TerminalDiagnosticsTab />;
+      case 'logs':
+        return <LogsTab />;
       case 'settings':
         return <SettingsTab />;
       default:

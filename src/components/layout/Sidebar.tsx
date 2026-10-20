@@ -1,9 +1,11 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  Radio,
   Wifi,
   Laptop2,
   Terminal,
+  ScrollText,
   Settings,
   Cpu,
   X,
@@ -21,8 +23,14 @@ export const Sidebar: React.FC = () => {
       badge: null,
     },
     {
+      id: 'network' as NavigationTab,
+      label: 'Cellular 5G / LTE',
+      icon: Radio,
+      badge: '5G SA',
+    },
+    {
       id: 'wifi' as NavigationTab,
-      label: 'Network & Wi-Fi',
+      label: 'Wi-Fi Management',
       icon: Wifi,
       badge: '3 Bands',
     },
@@ -37,6 +45,12 @@ export const Sidebar: React.FC = () => {
       label: 'Terminal & Diagnostics',
       icon: Terminal,
       badge: 'SSH PTY',
+    },
+    {
+      id: 'logs' as NavigationTab,
+      label: 'System & Traffic Logs',
+      icon: ScrollText,
+      badge: 'vnStat',
     },
     {
       id: 'settings' as NavigationTab,

@@ -1,9 +1,11 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  Radio,
   Wifi,
   Laptop2,
   Terminal,
+  ScrollText,
   Settings,
 } from 'lucide-react';
 import { useRouterStore, type NavigationTab } from '../../store/useRouterStore';
@@ -16,6 +18,11 @@ export const MobileBottomNav: React.FC = () => {
       id: 'overview' as NavigationTab,
       label: 'Overview',
       icon: LayoutDashboard,
+    },
+    {
+      id: 'network' as NavigationTab,
+      label: 'Cellular',
+      icon: Radio,
     },
     {
       id: 'wifi' as NavigationTab,
@@ -32,6 +39,11 @@ export const MobileBottomNav: React.FC = () => {
       id: 'terminal' as NavigationTab,
       label: 'Terminal',
       icon: Terminal,
+    },
+    {
+      id: 'logs' as NavigationTab,
+      label: 'Logs',
+      icon: ScrollText,
     },
     {
       id: 'settings' as NavigationTab,
