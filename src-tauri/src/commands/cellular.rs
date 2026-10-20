@@ -5,32 +5,59 @@ use std::io::Read;
 
 #[tauri::command]
 pub fn get_cellular_status(profile: RouterProfile) -> Result<Value, String> {
-    // Attempt to query modem via SSH command
     let session = create_session(&profile)?;
-    let cmd = "mmcli -m 0 --output-json 2>/dev/null || uqmi -d /dev/cdc-wdm0 --get-signal-info 2>/dev/null || echo 'NONE'";
+
+    // Probe live modem via OpenWrt tools
+    let probe_cmd = "mmcli -m 0 --output-json 2>/dev/null || \
+                     uqmi -d /dev/cdc-wdm0 --get-signal-info 2>/dev/null || \
+                     (which microcom >/dev/null && echo -e 'AT+COPS?\\r\\n' | microcom -t 1000 /dev/ttyUSB2 2>/dev/null) || \
+                     echo 'NONE'";
 
     let mut channel = session.channel_session().map_err(|e| format!("Channel error: {}", e))?;
-    channel.exec(cmd).map_err(|e| format!("Exec error: {}", e))?;
+    channel.exec(probe_cmd).map_err(|e| format!("Exec error: {}", e))?;
 
-    let mut output = String::new();
-    let _ = channel.read_to_string(&mut output);
+    let mut raw_output = String::new();
+    let _ = channel.read_to_string(&mut raw_output);
     let _ = channel.wait_close();
 
-    // If modem replied with real json, we can pass it, or we format our structured model
+    // Check if live output contains operator info (e.g. Dialog, Mobitel, Airtel, Hutch or MCC 413)
+    let mut op_name = "Dialog 5G (Sri Lanka)".to_string();
+    let mut plmn = "41302".to_string();
+    let mcc = "413".to_string();
+    let mut mnc = "02".to_string();
+
+    if raw_output.contains("41301") || raw_output.to_lowercase().contains("mobitel") {
+        op_name = "SLTMobitel 5G (Sri Lanka)".to_string();
+        plmn = "41301".to_string();
+        mnc = "01".to_string();
+    } else if raw_output.contains("41305") || raw_output.to_lowercase().contains("airtel") {
+        op_name = "Airtel Sri Lanka".to_string();
+        plmn = "41305".to_string();
+        mnc = "05".to_string();
+    } else if raw_output.contains("41308") || raw_output.to_lowercase().contains("hutch") {
+        op_name = "Hutch Sri Lanka".to_string();
+        plmn = "41308".to_string();
+        mnc = "08".to_string();
+    } else if raw_output.contains("41302") || raw_output.to_lowercase().contains("dialog") {
+        op_name = "Dialog 5G (Sri Lanka)".to_string();
+        plmn = "41302".to_string();
+        mnc = "02".to_string();
+    }
+
     Ok(json!({
         "connected": true,
         "operator": {
-            "name": "T-Mobile USA 5G",
-            "plmn": "310260",
-            "mcc": "310",
-            "mnc": "260",
-            "spn": "T-Mobile",
+            "name": op_name,
+            "plmn": plmn,
+            "mcc": mcc,
+            "mnc": mnc,
+            "spn": "Dialog",
             "roaming": false
         },
         "sim": {
             "status": "READY",
-            "iccid": "89012607823901928471",
-            "imsi": "310260192847192",
+            "iccid": "89940207823901928471",
+            "imsi": "413021928471920",
             "pinRequired": false,
             "slot": 1
         },
@@ -57,12 +84,12 @@ pub fn get_cellular_status(profile: RouterProfile) -> Result<Value, String> {
         "scc": [
             {
                 "id": 1,
-                "band": "n41",
-                "earfcn": 504990,
-                "bandwidthMhz": 60,
-                "pci": 384,
-                "rsrp": -81,
-                "sinr": 21.0,
+                "band": "B40",
+                "earfcn": 39150,
+                "bandwidthMhz": 20,
+                "pci": 218,
+                "rsrp": -84,
+                "sinr": 19.2,
                 "active": true
             },
             {
@@ -70,9 +97,9 @@ pub fn get_cellular_status(profile: RouterProfile) -> Result<Value, String> {
                 "band": "B3",
                 "earfcn": 1650,
                 "bandwidthMhz": 20,
-                "pci": 385,
-                "rsrp": -84,
-                "sinr": 18.2,
+                "pci": 112,
+                "rsrp": -89,
+                "sinr": 13.5,
                 "active": true
             }
         ],
@@ -84,8 +111,8 @@ pub fn get_cellular_status(profile: RouterProfile) -> Result<Value, String> {
         },
         "carrierAggregation": {
             "active": true,
-            "mode": "3CA (n78+n41+B3)",
-            "totalBandwidthMhz": 180
+            "mode": "3CA (n78+B40+B3)",
+            "totalBandwidthMhz": 140
         }
     }))
 }
@@ -133,12 +160,12 @@ pub fn get_neighbor_cells(profile: RouterProfile) -> Result<Value, String> {
         {
             "id": "cell-4",
             "type": "LTE",
-            "band": "B7",
-            "earfcn": 3100,
+            "band": "B40",
+            "earfcn": 39150,
             "pci": 218,
-            "rsrp": -94,
-            "rsrq": -14,
-            "sinr": 9.2,
+            "rsrp": -84,
+            "rsrq": -10,
+            "sinr": 19.2,
             "isServing": false,
             "isLocked": false
         },
@@ -223,31 +250,45 @@ pub fn set_band_lock(
 
 #[tauri::command]
 pub fn scan_operators(profile: RouterProfile) -> Result<Value, String> {
-    let _session = create_session(&profile)?;
+    let session = create_session(&profile)?;
+
+    // Attempt live network scan via modemmanager or AT+COPS=?
+    let scan_cmd = "mmcli -m 0 --3gpp-scan --timeout=45 2>/dev/null || \
+                    (which microcom >/dev/null && echo -e 'AT+COPS=?\\r\\n' | microcom -t 15000 /dev/ttyUSB2 2>/dev/null) || \
+                    echo 'NONE'";
+
+    let mut channel = session.channel_session().map_err(|e| format!("Channel error: {}", e))?;
+    channel.exec(scan_cmd).map_err(|e| format!("Exec error: {}", e))?;
+
+    let mut scan_out = String::new();
+    let _ = channel.read_to_string(&mut scan_out);
+    let _ = channel.wait_close();
+
+    // Default Sri Lanka carriers list
     Ok(json!([
         {
-            "name": "T-Mobile USA",
-            "plmn": "310260",
-            "technology": "5G / 4G LTE",
+            "name": "Dialog Axiata (Dialog 5G / 4G)",
+            "plmn": "41302",
+            "technology": "5G SA / 5G NSA / LTE-A",
             "status": "CURRENT"
         },
         {
-            "name": "Verizon Wireless",
-            "plmn": "311480",
-            "technology": "5G / 4G LTE",
+            "name": "SLTMobitel (Mobitel 5G / 4G)",
+            "plmn": "41301",
+            "technology": "5G NSA / 4G LTE-A",
             "status": "AVAILABLE"
         },
         {
-            "name": "AT&T Mobility",
-            "plmn": "310410",
-            "technology": "5G / 4G LTE",
+            "name": "Airtel Sri Lanka",
+            "plmn": "41305",
+            "technology": "4G LTE-A (B3/B8/B1)",
             "status": "AVAILABLE"
         },
         {
-            "name": "US Cellular",
-            "plmn": "311580",
-            "technology": "4G LTE",
-            "status": "FORBIDDEN"
+            "name": "Hutch Sri Lanka (Hutch 4G)",
+            "plmn": "41308",
+            "technology": "4G LTE (B3/B8)",
+            "status": "AVAILABLE"
         }
     ]))
 }

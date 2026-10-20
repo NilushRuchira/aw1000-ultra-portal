@@ -24,28 +24,47 @@ async function safeInvoke<T>(cmd: string, args?: Record<string, unknown>): Promi
   throw new Error('Not running inside Tauri desktop environment');
 }
 
+// Sri Lanka & International default APN profiles
 export const DEFAULT_APN_PROFILES: ApnProfile[] = [
   {
-    id: 'apn-1',
-    name: 'T-Mobile Fast (Default 5G)',
-    apn: 'fast.t-mobile.com',
+    id: 'apn-dialog-bb',
+    name: 'Dialog Home Broadband (Sri Lanka)',
+    apn: 'dialogbb',
     pdpType: 'IPV4V6',
     authType: 'NONE',
     isDefault: true,
     mtu: 1500,
   },
   {
-    id: 'apn-2',
-    name: 'T-Mobile IMS (VoLTE/VoNR)',
-    apn: 'ims',
+    id: 'apn-mobitel',
+    name: 'SLTMobitel Broadband (Sri Lanka)',
+    apn: 'mobitel3g',
     pdpType: 'IPV4V6',
     authType: 'NONE',
     isDefault: false,
     mtu: 1500,
   },
   {
-    id: 'apn-3',
-    name: 'Generic Broadband APN',
+    id: 'apn-airtel',
+    name: 'Airtel Sri Lanka',
+    apn: 'airtellive',
+    pdpType: 'IPV4V6',
+    authType: 'NONE',
+    isDefault: false,
+    mtu: 1500,
+  },
+  {
+    id: 'apn-hutch',
+    name: 'Hutch Sri Lanka Broadband',
+    apn: 'hutch3g',
+    pdpType: 'IPV4V6',
+    authType: 'NONE',
+    isDefault: false,
+    mtu: 1500,
+  },
+  {
+    id: 'apn-generic',
+    name: 'Generic Global Internet',
     apn: 'internet',
     pdpType: 'IPV4V6',
     authType: 'NONE',
@@ -62,11 +81,19 @@ class MockCellularEngine {
 
   private bandLock: BandLockConfig = {
     modePreference: 'AUTO',
-    lockedLteBands: ['B1', 'B3', 'B7', 'B20', 'B28'],
-    lockedNrBands: ['n1', 'n28', 'n41', 'n78'],
+    lockedLteBands: ['B1', 'B3', 'B8', 'B40'],
+    lockedNrBands: ['n78', 'n41'],
   };
 
   private apnProfiles: ApnProfile[] = [...DEFAULT_APN_PROFILES];
+
+  // Active registered carrier
+  private currentOperator: AvailableOperator = {
+    name: 'Dialog 5G (Sri Lanka)',
+    plmn: '41302',
+    technology: '5G SA / 5G NSA / LTE-A',
+    status: 'CURRENT',
+  };
 
   private neighborCells: NeighborCell[] = [
     {
@@ -108,12 +135,12 @@ class MockCellularEngine {
     {
       id: 'cell-nbr-3',
       type: 'LTE',
-      band: 'B7',
-      earfcn: 3100,
+      band: 'B40',
+      earfcn: 39150,
       pci: 218,
-      rsrp: -94,
-      rsrq: -14,
-      sinr: 9.2,
+      rsrp: -84,
+      rsrq: -10,
+      sinr: 19.2,
       isServing: false,
       isLocked: false,
     },
@@ -136,20 +163,35 @@ class MockCellularEngine {
     const sinrJitter = +((Math.random() - 0.5) * 1.5).toFixed(1);
     const rsrpJitter = Math.floor((Math.random() - 0.5) * 3);
 
+    const isMobitel = this.currentOperator.plmn === '41301';
+    const isAirtel = this.currentOperator.plmn === '41305';
+    const isHutch = this.currentOperator.plmn === '41308';
+
+    const opName = isMobitel
+      ? 'SLTMobitel 5G'
+      : isAirtel
+      ? 'Airtel Sri Lanka'
+      : isHutch
+      ? 'Hutch Sri Lanka'
+      : 'Dialog 5G (Sri Lanka)';
+
+    const plmnCode = this.currentOperator.plmn;
+    const mncCode = plmnCode.substring(3);
+
     return {
       connected: true,
       operator: {
-        name: 'T-Mobile USA 5G',
-        plmn: '310260',
-        mcc: '310',
-        mnc: '260',
-        spn: 'T-Mobile',
+        name: opName,
+        plmn: plmnCode,
+        mcc: '413',
+        mnc: mncCode,
+        spn: opName.split(' ')[0],
         roaming: false,
       },
       sim: {
         status: 'READY',
-        iccid: '89012607823901928471',
-        imsi: '310260192847192',
+        iccid: '89940207823901928471',
+        imsi: `${plmnCode}192847192`,
         pinRequired: false,
         slot: 1,
       },
@@ -164,7 +206,7 @@ class MockCellularEngine {
       },
       pcc: {
         band: 'n78',
-        bandName: '3500 MHz (C-Band Ultra Capacity)',
+        bandName: '3500 MHz (C-Band High Capacity)',
         earfcn: 627340,
         bandwidthMhz: 100,
         pci: this.cellLock.enabled ? (this.cellLock.pci || 384) : 384,
@@ -176,12 +218,12 @@ class MockCellularEngine {
       scc: [
         {
           id: 1,
-          band: 'n41',
-          earfcn: 504990,
-          bandwidthMhz: 60,
-          pci: 384,
-          rsrp: -81 + rsrpJitter,
-          sinr: 21.0,
+          band: 'B40',
+          earfcn: 39150,
+          bandwidthMhz: 20,
+          pci: 218,
+          rsrp: -84 + rsrpJitter,
+          sinr: 19.2,
           active: true,
         },
         {
@@ -189,9 +231,9 @@ class MockCellularEngine {
           band: 'B3',
           earfcn: 1650,
           bandwidthMhz: 20,
-          pci: 385,
-          rsrp: -84 + rsrpJitter,
-          sinr: 18.2,
+          pci: 112,
+          rsrp: -89 + rsrpJitter,
+          sinr: 13.5,
           active: true,
         },
       ],
@@ -203,8 +245,8 @@ class MockCellularEngine {
       },
       carrierAggregation: {
         active: true,
-        mode: '3CA (n78 [100M] + n41 [60M] + B3 [20M])',
-        totalBandwidthMhz: 180,
+        mode: '3CA (n78 [100M] + B40 [20M] + B3 [20M])',
+        totalBandwidthMhz: 140,
       },
     };
   }
@@ -273,6 +315,21 @@ class MockCellularEngine {
     return this.apnProfiles;
   }
 
+  public setRegisteredOperator(plmn: string) {
+    const opMap: Record<string, string> = {
+      '41302': 'Dialog 5G (Sri Lanka)',
+      '41301': 'SLTMobitel 5G (Sri Lanka)',
+      '41305': 'Airtel Sri Lanka',
+      '41308': 'Hutch Sri Lanka',
+    };
+    this.currentOperator = {
+      name: opMap[plmn] || `Operator (${plmn})`,
+      plmn,
+      technology: '5G / 4G LTE',
+      status: 'CURRENT',
+    };
+  }
+
   public analyzeServingCell(status: CellularStatus, neighbors: NeighborCell[]): CellAnalysis {
     const rsrp = status.signal.rsrp;
     const sinr = status.signal.sinr;
@@ -308,10 +365,10 @@ class MockCellularEngine {
     }
 
     let recommendation =
-      'Serving cell RF conditions are optimal. 4x4 MIMO and 3CA carrier aggregation are fully engaged.';
+      'Serving cell RF conditions are optimal on Dialog 5G network. 4x4 MIMO and 3CA carrier aggregation are fully engaged.';
     if (interferenceLevel === 'HIGH') {
       recommendation =
-        'High co-channel interference detected from adjacent tower PCI 385. Consider locking to n78 PCI 384 or testing band lock on n41.';
+        'High co-channel sector interference detected from adjacent tower PCI 385. Consider locking to n78 PCI 384 or testing band lock on B40 / B3.';
     } else if (score < 60) {
       recommendation =
         'Serving cell signal is degraded. Try reorienting external directional antennas or locking to an alternate neighbor cell with higher RSRP.';
@@ -444,36 +501,39 @@ export const cellularApi = {
   async scanOperators(profile: RouterProfile): Promise<AvailableOperator[]> {
     if (isTauri()) {
       try {
-        return await safeInvoke<AvailableOperator[]>('scan_operators', { profile });
+        const ops = await safeInvoke<AvailableOperator[]>('scan_operators', { profile });
+        if (ops && ops.length > 0) return ops;
       } catch (e) {
         console.warn('Native scan_operators failed, using mock:', e);
       }
     }
     await new Promise((r) => setTimeout(r, 1200));
+
+    // Sri Lanka cellular operators (MCC 413)
     return [
       {
-        name: 'T-Mobile USA',
-        plmn: '310260',
-        technology: '5G SA / 5G NSA / LTE',
+        name: 'Dialog Axiata (Dialog 5G / 4G)',
+        plmn: '41302',
+        technology: '5G SA / 5G NSA / LTE-A',
         status: 'CURRENT',
       },
       {
-        name: 'Verizon Wireless',
-        plmn: '311480',
-        technology: '5G Ultra Wideband / LTE',
+        name: 'SLTMobitel (Mobitel 5G / 4G)',
+        plmn: '41301',
+        technology: '5G NSA / 4G LTE-A',
         status: 'AVAILABLE',
       },
       {
-        name: 'AT&T 5G',
-        plmn: '310410',
-        technology: '5G / 4G LTE',
+        name: 'Airtel Sri Lanka',
+        plmn: '41305',
+        technology: '4G LTE-A (B3/B8/B1)',
         status: 'AVAILABLE',
       },
       {
-        name: 'US Cellular',
-        plmn: '311580',
-        technology: '4G LTE',
-        status: 'FORBIDDEN',
+        name: 'Hutch Sri Lanka (Hutch 4G)',
+        plmn: '41308',
+        technology: '4G LTE (B3/B8)',
+        status: 'AVAILABLE',
       },
     ];
   },
@@ -489,6 +549,9 @@ export const cellularApi = {
       } catch (e) {
         console.warn('Native set_operator_mode failed, using mock:', e);
       }
+    }
+    if (plmn) {
+      mockCellular.setRegisteredOperator(plmn);
     }
     return {
       success: true,
