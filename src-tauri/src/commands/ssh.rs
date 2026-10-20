@@ -76,8 +76,18 @@ pub fn exec_ssh_command(profile: RouterProfile, command: String) -> Result<SshEx
         .channel_session()
         .map_err(|e| format!("Failed to open channel: {}", e))?;
 
+    // Map common aliases that OpenWrt's BusyBox ash lacks out-of-the-box
+    let trimmed = command.trim();
+    let effective_cmd = if trimmed == "ll" {
+        "ls -la 2>/dev/null || ls -l".to_string()
+    } else if trimmed.starts_with("ll ") {
+        format!("ls -la {}", &trimmed[3..])
+    } else {
+        command.clone()
+    };
+
     channel
-        .exec(&command)
+        .exec(&effective_cmd)
         .map_err(|e| format!("Failed to exec command '{}': {}", command, e))?;
 
     let mut stdout = String::new();
@@ -119,6 +129,10 @@ pub fn start_ssh_session(
     channel
         .shell()
         .map_err(|e| format!("Failed to start shell: {}", e))?;
+
+    // Seed OpenWrt shell environment with convenient aliases (like ll) quietly
+    let _ = channel.write_all(b"alias ll='ls -la 2>/dev/null || ls -l'\n");
+    let _ = channel.flush();
 
     let session_id = Uuid::new_v4().to_string();
     let channel_arc = Arc::new(Mutex::new(channel));

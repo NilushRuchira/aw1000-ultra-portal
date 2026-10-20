@@ -41,24 +41,84 @@ export const TerminalDiagnosticsTab: React.FC = () => {
         // Enter pressed
         term.write('\r\n');
         const trimmed = currentInput.trim();
-        if (trimmed === 'clear') {
+        const lower = trimmed.toLowerCase();
+
+        if (lower === 'clear') {
           term.clear();
-        } else if (trimmed === 'help') {
-          term.writeln('Arcadyan AW1000 CLI Commands Available:');
+        } else if (lower === 'help') {
+          term.writeln('\x1b[1;36m=== Arcadyan AW1000_Ultra OpenWrt CLI Help ===\x1b[0m');
+          term.writeln('Standard Commands:');
+          term.writeln('  ll / ls -la    - List directory contents in long format');
           term.writeln('  iwinfo         - View wireless interface stats & PHY modes');
           term.writeln('  dmesg          - View kernel boot ring buffer');
-          term.writeln('  logread        - View system & hostapd logs');
-          term.writeln('  cat /proc/cpuinfo - MediaTek Filogic 830 quad-core specs');
+          term.writeln('  logread        - View system, cellular & hostapd logs');
+          term.writeln('  uptime         - Router uptime & load averages');
           term.writeln('  thermal        - Multi-zone SoC thermal readings');
-          term.writeln('  uptime         - Router uptime & 1m/5m/15m load averages');
-        } else if (trimmed === 'iwinfo') {
-          term.writeln('phy0-ap0  ESSID: "Arcadyan_Ultra_2.4G"  Tx-Power: 23 dBm  Mode: Master');
-          term.writeln('phy1-ap0  ESSID: "Arcadyan_Ultra_5G"    Tx-Power: 26 dBm  Mode: Master (160MHz)');
-          term.writeln('phy2-ap0  ESSID: "Arcadyan_Ultra_6G"    Tx-Power: 24 dBm  Mode: Master (Wi-Fi 6E)');
-        } else if (trimmed === 'uptime') {
-          term.writeln(' 19:24:00 up 3 days, 23:14,  load average: 0.28, 0.35, 0.42');
-        } else if (trimmed === 'thermal') {
-          term.writeln('zone0 (CPU): 47°C  zone1 (2.4G): 49°C  zone2 (5G): 52°C  zone3 (6G): 54°C');
+          term.writeln('  ifconfig / ip a - Network interface IP and MAC configurations');
+          term.writeln('  cat /etc/banner - OpenWrt ASCII release banner');
+          term.writeln('  df -h / free -m - Storage and RAM utilization');
+        } else if (lower === 'll' || lower === 'ls -l' || lower === 'ls -la' || lower === 'ls -al' || lower === 'ls') {
+          term.writeln('drwxr-xr-x    1 root     root             0 Oct 20 22:30 \x1b[1;34m.\x1b[0m');
+          term.writeln('drwxr-xr-x    1 root     root             0 Oct 20 22:25 \x1b[1;34m..\x1b[0m');
+          term.writeln('-rw-r--r--    1 root     root          1204 Oct 20 22:15 .profile');
+          term.writeln('drwxr-xr-x    2 root     root             0 Oct 20 22:00 \x1b[1;34mbin\x1b[0m');
+          term.writeln('drwxr-xr-x    8 root     root             0 Oct 20 22:00 \x1b[1;34metc\x1b[0m');
+          term.writeln('drwxr-xr-x    1 root     root             0 Oct 20 22:00 \x1b[1;34mlib\x1b[0m');
+          term.writeln('drwxr-xr-x    2 root     root             0 Oct 20 22:00 \x1b[1;34moverlay\x1b[0m');
+          term.writeln('dr-xr-xr-x  142 root     root             0 Jan  1  1970 \x1b[1;34mproc\x1b[0m');
+          term.writeln('drwxr-xr-x    1 root     root             0 Oct 20 22:00 \x1b[1;34mrom\x1b[0m');
+          term.writeln('drwxr-xr-x    2 root     root             0 Oct 20 22:00 \x1b[1;34msbin\x1b[0m');
+          term.writeln('dr-xr-xr-x   12 root     root             0 Jan  1  1970 \x1b[1;34msys\x1b[0m');
+          term.writeln('drwxrwxrwt   18 root     root           740 Oct 20 22:32 \x1b[1;34mtmp\x1b[0m');
+          term.writeln('drwxr-xr-x    7 root     root             0 Oct 20 22:00 \x1b[1;34musr\x1b[0m');
+          term.writeln('drwxr-xr-x    1 root     root             0 Oct 20 22:00 \x1b[1;34mwww\x1b[0m');
+        } else if (lower === 'pwd') {
+          term.writeln('/root');
+        } else if (lower === 'whoami') {
+          term.writeln('root');
+        } else if (lower === 'uname -a' || lower === 'uname') {
+          term.writeln('Linux OpenWrt-AW1000 6.6.35 #0 SMP PREEMPT Oct 20 2026 armv8l GNU/Linux');
+        } else if (lower.includes('openwrt_release') || lower === 'cat /etc/openwrt_release') {
+          term.writeln('DISTRIB_ID=\'OpenWrt\'');
+          term.writeln('DISTRIB_RELEASE=\'23.05.4\'');
+          term.writeln('DISTRIB_REVISION=\'r24012-d8dd03c461\'');
+          term.writeln('DISTRIB_TARGET=\'qualcommax/ipq807x\'');
+          term.writeln('DISTRIB_ARCH=\'aarch64_cortex-a53\'');
+          term.writeln('DISTRIB_DESCRIPTION=\'OpenWrt 23.05.4 Arcadyan AW1000 Ultra\'');
+        } else if (lower === 'cat /etc/banner') {
+          term.writeln('  _______                     ________        __');
+          term.writeln(' |       |.-----.-----.-----.|  |  |  |.----.|  |_');
+          term.writeln(' |   -   ||  _  |  -__|     ||  |  |  ||   _||   _|');
+          term.writeln(' |_______||   __|_____|__|__||________||__|  |____|');
+          term.writeln('          |__| W I R E L E S S   F R E E D O M');
+          term.writeln(' -----------------------------------------------------');
+          term.writeln(' OpenWrt 23.05.4, r24012-d8dd03c461 (Arcadyan AW1000)');
+          term.writeln(' -----------------------------------------------------');
+        } else if (lower === 'free' || lower === 'free -m') {
+          term.writeln('               total        used        free      shared  buff/cache   available');
+          term.writeln('Mem:         1048576      412850      435726       12048      200000      635726');
+          term.writeln('Swap:              0           0           0');
+        } else if (lower === 'df' || lower === 'df -h') {
+          term.writeln('Filesystem                Size      Used Available Use% Mounted on');
+          term.writeln('/dev/root               256.0M    142.5M    113.5M  56% /rom');
+          term.writeln('tmpfs                   512.0M      2.4M    509.6M   1% /tmp');
+          term.writeln('/dev/mtdblock6          768.0M    185.0M    583.0M  24% /overlay');
+          term.writeln('overlayfs:/overlay      768.0M    185.0M    583.0M  24% /');
+        } else if (lower === 'ifconfig' || lower === 'ip a') {
+          term.writeln('br-lan    Link encap:Ethernet  HWaddr 00:1A:2B:3C:4D:5E');
+          term.writeln('          inet addr:192.168.1.1  Bcast:192.168.1.255  Mask:255.255.255.0');
+          term.writeln('          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1');
+          term.writeln('wwan0     Link encap:Point-Point  HWaddr 00:00:00:00:00:00');
+          term.writeln('          inet addr:100.74.19.82  P-t-P:100.74.19.82  Mask:255.255.255.255');
+          term.writeln('          UP POINTOPOINT RUNNING NOARP MULTICAST  MTU:1500 (Dialog 5G SA)');
+        } else if (lower === 'iwinfo') {
+          term.writeln('phy0-ap0  ESSID: "Arcadyan_Ultra_2.4G"  Tx-Power: 23 dBm  Mode: Master  Channel: 6 (2.437 GHz)');
+          term.writeln('phy1-ap0  ESSID: "Arcadyan_Ultra_5G"    Tx-Power: 26 dBm  Mode: Master  Channel: 36 (5.180 GHz, 160MHz)');
+          term.writeln('phy2-ap0  ESSID: "Arcadyan_Ultra_6G"    Tx-Power: 24 dBm  Mode: Master  Channel: 69 (6.295 GHz, Wi-Fi 6E)');
+        } else if (lower === 'uptime') {
+          term.writeln(' 22:34:00 up 3 days, 23:24,  load average: 0.18, 0.25, 0.31');
+        } else if (lower === 'thermal') {
+          term.writeln('zone0 (CPU IPQ8072): 47.0°C  zone1 (2.4G PHY): 48.0°C  zone2 (5G PHY): 51.2°C  zone3 (6G PHY): 53.8°C');
         } else if (trimmed.length > 0) {
           term.writeln(`Executing: ${trimmed}`);
           term.writeln(`Exit 0`);
@@ -198,6 +258,13 @@ export const TerminalDiagnosticsTab: React.FC = () => {
   // Diagnostic tool action buttons
   const diagnosticTools = [
     {
+      id: 'ls_la',
+      name: 'List Directory (ll / ls -la)',
+      desc: 'ls -la',
+      cmd: 'ls -la',
+      icon: TerminalIcon,
+    },
+    {
       id: 'ping',
       name: 'Ping Cloudflare DNS',
       desc: 'ping -c 4 1.1.1.1',
@@ -300,6 +367,17 @@ export const TerminalDiagnosticsTab: React.FC = () => {
           ref={terminalRef}
           className="terminal-container h-[280px] sm:h-[400px] w-full bg-[#090d16] p-1.5 sm:p-2"
         />
+
+        {/* Terminal Info Footer */}
+        <div className="px-3.5 sm:px-5 py-2 bg-slate-950/80 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+            <span>BusyBox <code className="text-blue-300 font-mono">ash</code> shell. Command <code className="text-emerald-300 font-mono font-bold">ll</code> is auto-aliased to <code className="text-emerald-300 font-mono">ls -la</code>.</span>
+          </div>
+          <div className="font-mono text-[10px] text-slate-500 hidden sm:block">
+            UTF-8 • VT100 / xterm-256color • PTY
+          </div>
+        </div>
       </div>
 
       {/* Quick Diagnostic Suite */}
