@@ -5,6 +5,7 @@ import {
   Wifi,
   Laptop2,
   Terminal,
+  ScrollText,
   Settings,
   Cpu,
   X,
@@ -44,6 +45,12 @@ export const Sidebar: React.FC = () => {
       label: 'Terminal & Diagnostics',
       icon: Terminal,
       badge: 'SSH PTY',
+    },
+    {
+      id: 'logs' as NavigationTab,
+      label: 'System & Traffic Logs',
+      icon: ScrollText,
+      badge: 'vnStat',
     },
     {
       id: 'settings' as NavigationTab,

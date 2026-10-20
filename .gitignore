@@ -35,8 +35,9 @@ src-tauri/gen/apple/
 *.cert
 
 # Logs & Runtime Dumps
-logs/
+/logs/
 *.log
+!src/**/logs/
 *.tmp
 *.temp
 

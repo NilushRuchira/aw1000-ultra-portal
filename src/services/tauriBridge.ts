@@ -6,7 +6,7 @@ export const isTauri = (): boolean => {
 };
 
 // Safe wrapper for Tauri invoke
-async function safeInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+export async function safeInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   if (isTauri()) {
     try {
       const { invoke } = await import('@tauri-apps/api/core');

@@ -8,6 +8,7 @@ import { NetworkConfigTab } from './components/network/NetworkConfigTab';
 import { WifiManagementTab } from './components/wifi/WifiManagementTab';
 import { ConnectedDevicesTab } from './components/devices/ConnectedDevicesTab';
 import { TerminalDiagnosticsTab } from './components/terminal/TerminalDiagnosticsTab';
+import { LogsTab } from './components/logs/LogsTab';
 import { SettingsTab } from './components/setup/SettingsTab';
 import { useRouterStore } from './store/useRouterStore';
 import { useProfileStore } from './store/useProfileStore';
@@ -53,6 +54,8 @@ const RouterPortalApp: React.FC = () => {
         return <ConnectedDevicesTab />;
       case 'terminal':
         return <TerminalDiagnosticsTab />;
+      case 'logs':
+        return <LogsTab />;
       case 'settings':
         return <SettingsTab />;
       default:

@@ -5,6 +5,7 @@ import {
   Wifi,
   Laptop2,
   Terminal,
+  ScrollText,
   Settings,
 } from 'lucide-react';
 import { useRouterStore, type NavigationTab } from '../../store/useRouterStore';
@@ -38,6 +39,11 @@ export const MobileBottomNav: React.FC = () => {
       id: 'terminal' as NavigationTab,
       label: 'Terminal',
       icon: Terminal,
+    },
+    {
+      id: 'logs' as NavigationTab,
+      label: 'Logs',
+      icon: ScrollText,
     },
     {
       id: 'settings' as NavigationTab,
