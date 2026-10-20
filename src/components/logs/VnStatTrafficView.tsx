@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -18,6 +18,10 @@ import {
   HardDrive,
   RefreshCw,
   Package,
+  ChevronDown,
+  ChevronUp,
+  Activity,
+  Layers,
 } from 'lucide-react';
 import { useLogsStore, type VnStatTimeframe } from '../../store/useLogsStore';
 
@@ -34,6 +38,28 @@ export const VnStatTrafficView: React.FC = () => {
     isLoadingVnstat,
     actionMessage,
   } = useLogsStore();
+
+  const [isGraphMinimized, setIsGraphMinimized] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('aw1000_vnstat_graph_minimized') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [hourlyChartType, setHourlyChartType] = useState<'area' | 'bar'>('area');
+
+  const toggleMinimizeGraph = () => {
+    setIsGraphMinimized((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('aw1000_vnstat_graph_minimized', String(next));
+      } catch {
+        // Ignore localStorage quota errors
+      }
+      return next;
+    });
+  };
 
   const formatBytes = (bytes: number) => {
     if (!bytes || bytes === 0) return '0 B';
@@ -264,99 +290,198 @@ export const VnStatTrafficView: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Interactive Recharts Section */}
+      {/* Main Interactive Recharts Section (Collapsible & Minimisable) */}
       <div className="glass-panel rounded-2xl p-4 sm:p-6 border border-slate-800/80 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-          <h4 className="text-sm font-bold text-white flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-blue-400" />
-            <span>
-              {vnstatTimeframe === 'hourly'
-                ? 'Hourly Traffic Profile (Past 24 Hours in MB)'
-                : vnstatTimeframe === 'daily'
-                ? 'Daily Data Volume (Past 30 Days in GB)'
-                : 'Monthly Bandwidth Consumption (Past 12 Months in GB)'}
-            </span>
-          </h4>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              <BarChart3 className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>
+                  {vnstatTimeframe === 'hourly'
+                    ? 'Hourly Traffic Profile (Past 24 Hours in MB)'
+                    : vnstatTimeframe === 'daily'
+                    ? 'Daily Data Volume (Past 30 Days in GB)'
+                    : 'Monthly Bandwidth Consumption (Past 12 Months in GB)'}
+                </span>
+              </h4>
+              <p className="text-[11px] text-slate-400">
+                Interface: <span className="text-slate-200 font-mono font-semibold">{currentIface?.name}</span> ({currentIface?.alias})
+              </p>
+            </div>
+          </div>
 
-          <div className="flex items-center gap-3 text-xs font-mono">
-            <span className="flex items-center gap-1.5 text-cyan-400">
-              <span className="w-2.5 h-2.5 rounded bg-cyan-400" /> Download (RX)
-            </span>
-            <span className="flex items-center gap-1.5 text-purple-400">
-              <span className="w-2.5 h-2.5 rounded bg-purple-400" /> Upload (TX)
-            </span>
+          <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
+            {!isGraphMinimized && (
+              <div className="flex items-center gap-3 text-xs font-mono mr-2">
+                <span className="flex items-center gap-1.5 text-cyan-400">
+                  <span className="w-2.5 h-2.5 rounded bg-cyan-400" /> Download (RX)
+                </span>
+                <span className="flex items-center gap-1.5 text-purple-400">
+                  <span className="w-2.5 h-2.5 rounded bg-purple-400" /> Upload (TX)
+                </span>
+              </div>
+            )}
+
+            {/* Toggle Area vs Bar in Hourly */}
+            {!isGraphMinimized && vnstatTimeframe === 'hourly' && (
+              <div className="flex items-center rounded-lg bg-slate-900 border border-slate-800 p-0.5 text-[11px] font-mono mr-1">
+                <button
+                  onClick={() => setHourlyChartType('area')}
+                  className={`px-2 py-0.5 rounded flex items-center gap-1 ${
+                    hourlyChartType === 'area'
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Activity className="w-3 h-3" />
+                  <span>Area</span>
+                </button>
+                <button
+                  onClick={() => setHourlyChartType('bar')}
+                  className={`px-2 py-0.5 rounded flex items-center gap-1 ${
+                    hourlyChartType === 'bar'
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Layers className="w-3 h-3" />
+                  <span>Bar</span>
+                </button>
+              </div>
+            )}
+
+            {/* Minimize / Expand Graph Toggle Button */}
+            <button
+              onClick={toggleMinimizeGraph}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-slate-800 transition-colors shadow-sm"
+              title={isGraphMinimized ? 'Expand full graphical charts' : 'Minimize graph view'}
+            >
+              {isGraphMinimized ? (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Expand Graph</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Minimize</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* The Graphs */}
-        <div className="h-72 w-full">
-          {vnstatTimeframe === 'hourly' && currentIface && (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={currentIface.hourly}>
-                <defs>
-                  <linearGradient id="vnRxGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.6} />
-                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="vnTxGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.6} />
-                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="time" stroke="#475569" fontSize={10} tickLine={false} />
-                <YAxis stroke="#475569" fontSize={10} tickLine={false} unit=" MB" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#090d16',
-                    borderColor: '#334155',
-                    borderRadius: '0.75rem',
-                    fontSize: '11px',
-                  }}
-                />
-                <Area type="monotone" dataKey="rxMb" name="Download (MB)" stroke="#06b6d4" fill="url(#vnRxGradient)" />
-                <Area type="monotone" dataKey="txMb" name="Upload (MB)" stroke="#a855f7" fill="url(#vnTxGradient)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
+        {/* The Graphs Content (or Collapsed Minimized Strip) */}
+        {isGraphMinimized ? (
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+            <div className="flex items-center gap-2.5 text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              <span className="font-semibold text-white">Graphical Visualizer Minimized</span>
+              <span className="text-slate-400 font-mono text-[11px] hidden sm:inline">
+                • {vnstatTimeframe === 'hourly' ? '24 Hours Hourly Curve' : vnstatTimeframe === 'daily' ? '30 Days Daily Data' : '12 Months Historical Consumption'}
+              </span>
+            </div>
 
-          {vnstatTimeframe === 'daily' && currentIface && (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={currentIface.daily}>
-                <XAxis dataKey="date" stroke="#475569" fontSize={10} tickLine={false} />
-                <YAxis stroke="#475569" fontSize={10} tickLine={false} unit=" GB" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#090d16',
-                    borderColor: '#334155',
-                    borderRadius: '0.75rem',
-                    fontSize: '11px',
-                  }}
-                />
-                <Bar dataKey="rxGb" name="Download (GB)" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="txGb" name="Upload (GB)" fill="#a855f7" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+            <button
+              onClick={toggleMinimizeGraph}
+              className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1.5 self-start sm:self-auto transition-colors"
+            >
+              <span>Expand Interactive Visualizer</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="h-72 w-full transition-all">
+            {vnstatTimeframe === 'hourly' && currentIface && hourlyChartType === 'area' && (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={currentIface.hourly}>
+                  <defs>
+                    <linearGradient id="vnRxGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.6} />
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="vnTxGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#a855f7" stopOpacity={0.6} />
+                      <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="time" stroke="#475569" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#475569" fontSize={10} tickLine={false} unit=" MB" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#090d16',
+                      borderColor: '#334155',
+                      borderRadius: '0.75rem',
+                      fontSize: '11px',
+                    }}
+                  />
+                  <Area type="monotone" dataKey="rxMb" name="Download (MB)" stroke="#06b6d4" fill="url(#vnRxGradient)" />
+                  <Area type="monotone" dataKey="txMb" name="Upload (MB)" stroke="#a855f7" fill="url(#vnTxGradient)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
 
-          {vnstatTimeframe === 'monthly' && currentIface && (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={currentIface.monthly}>
-                <XAxis dataKey="month" stroke="#475569" fontSize={10} tickLine={false} />
-                <YAxis stroke="#475569" fontSize={10} tickLine={false} unit=" GB" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#090d16',
-                    borderColor: '#334155',
-                    borderRadius: '0.75rem',
-                    fontSize: '11px',
-                  }}
-                />
-                <Bar dataKey="rxGb" name="Download (GB)" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="txGb" name="Upload (GB)" fill="#a855f7" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
+            {vnstatTimeframe === 'hourly' && currentIface && hourlyChartType === 'bar' && (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={currentIface.hourly}>
+                  <XAxis dataKey="time" stroke="#475569" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#475569" fontSize={10} tickLine={false} unit=" MB" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#090d16',
+                      borderColor: '#334155',
+                      borderRadius: '0.75rem',
+                      fontSize: '11px',
+                    }}
+                  />
+                  <Bar dataKey="rxMb" name="Download (MB)" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="txMb" name="Upload (MB)" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+
+            {vnstatTimeframe === 'daily' && currentIface && (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={currentIface.daily}>
+                  <XAxis dataKey="date" stroke="#475569" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#475569" fontSize={10} tickLine={false} unit=" GB" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#090d16',
+                      borderColor: '#334155',
+                      borderRadius: '0.75rem',
+                      fontSize: '11px',
+                    }}
+                  />
+                  <Bar dataKey="rxGb" name="Download (GB)" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="txGb" name="Upload (GB)" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+
+            {vnstatTimeframe === 'monthly' && currentIface && (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={currentIface.monthly}>
+                  <XAxis dataKey="month" stroke="#475569" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#475569" fontSize={10} tickLine={false} unit=" GB" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#090d16',
+                      borderColor: '#334155',
+                      borderRadius: '0.75rem',
+                      fontSize: '11px',
+                    }}
+                  />
+                  <Bar dataKey="rxGb" name="Download (GB)" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="txGb" name="Upload (GB)" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Historical Summary Table */}

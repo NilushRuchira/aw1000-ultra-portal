@@ -168,15 +168,17 @@ fi
     let is_installed = output.contains("VNSTAT_INSTALLED:1");
 
     if is_installed {
-        // Try parsing JSON from vnstat --json output
-        if let Some(json_start) = output.find('{') {
-            let json_str = &output[json_start..];
-            if let Ok(val) = serde_json::from_str::<Value>(json_str) {
-                return Ok(json!({
-                    "installed": true,
-                    "rawVnstat": val,
-                    "message": "Live vnStat traffic data collected"
-                }));
+        // Robust JSON slice extraction between first '{' and last '}'
+        if let (Some(json_start), Some(json_end)) = (output.find('{'), output.rfind('}')) {
+            if json_end > json_start {
+                let json_slice = &output[json_start..=json_end];
+                if let Ok(val) = serde_json::from_str::<Value>(json_slice) {
+                    return Ok(json!({
+                        "installed": true,
+                        "rawVnstat": val,
+                        "message": "Live vnStat traffic data collected"
+                    }));
+                }
             }
         }
 

@@ -182,198 +182,258 @@ function generateMockLogs(): LogEntry[] {
   ];
 }
 
-// Generates mock vnStat telemetry data for testing & browser preview
-function generateMockVnStat(): VnStatResult {
-  const currentHour = new Date().getHours();
+// Persistent stateful vnStat engine to guarantee stable, non-fluctuating telemetry across polls
+class PersistentVnStatEngine {
+  private data: VnStatResult | null = null;
+  private lastTick = Date.now();
 
-  // 24 hours of hourly data points
-  const hourly: VnStatHourlyPoint[] = [];
-  for (let i = 23; i >= 0; i--) {
-    const h = (currentHour - i + 24) % 24;
-    const hourLabel = `${h.toString().padStart(2, '0')}:00`;
-    // Realistic traffic curve (peak during evening 18:00 - 23:00)
-    const factor = h >= 18 && h <= 23 ? 3.5 : h >= 9 && h <= 17 ? 2.0 : 0.6;
-    const rxMb = Math.round((80 + Math.random() * 140) * factor);
-    const txMb = Math.round((20 + Math.random() * 45) * factor);
-    hourly.push({
-      time: hourLabel,
-      rx: rxMb * 1024 * 1024,
-      tx: txMb * 1024 * 1024,
-      rxMb,
-      txMb,
-      totalMb: rxMb + txMb,
-    });
+  private initializeBaseline(): VnStatResult {
+    const currentHour = new Date().getHours();
+    const today = new Date();
+
+    // 24 hours of hourly data points (fixed baseline)
+    const hourly: VnStatHourlyPoint[] = [];
+    for (let i = 23; i >= 0; i--) {
+      const h = (currentHour - i + 24) % 24;
+      const hourLabel = `${h.toString().padStart(2, '0')}:00`;
+      const factor = h >= 18 && h <= 23 ? 3.2 : h >= 9 && h <= 17 ? 1.9 : 0.6;
+      const baseMb = 75 + ((h * 17 + 23) % 85);
+      const rxMb = Math.round(baseMb * factor);
+      const txMb = Math.round(baseMb * 0.28 * factor);
+      hourly.push({
+        time: hourLabel,
+        rx: rxMb * 1024 * 1024,
+        tx: txMb * 1024 * 1024,
+        rxMb,
+        txMb,
+        totalMb: rxMb + txMb,
+      });
+    }
+
+    // 30 days of daily data points (fixed baseline)
+    const daily: VnStatDailyPoint[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateLabel = `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}`;
+      const fullDate = d.toISOString().split('T')[0];
+
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      const dayBase = 4.1 + ((d.getDate() * 13) % 40) / 10;
+      const rxGb = +(dayBase * (isWeekend ? 1.35 : 1.0)).toFixed(2);
+      const txGb = +(dayBase * 0.25 * (isWeekend ? 1.25 : 1.0)).toFixed(2);
+
+      daily.push({
+        date: dateLabel,
+        fullDate,
+        rx: Math.round(rxGb * 1024 * 1024 * 1024),
+        tx: Math.round(txGb * 1024 * 1024 * 1024),
+        rxGb,
+        txGb,
+        totalGb: +(rxGb + txGb).toFixed(2),
+      });
+    }
+
+    // 12 months of monthly data points (fixed baseline)
+    const monthly: VnStatMonthlyPoint[] = [];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const curMonthIdx = today.getMonth();
+    for (let i = 11; i >= 0; i--) {
+      const mIdx = (curMonthIdx - i + 12) % 12;
+      const year = today.getFullYear() - (curMonthIdx - i < 0 ? 1 : 0);
+      const monthLabel = `${months[mIdx]} ${year}`;
+
+      const rxGb = 118 + ((mIdx * 19 + 7) % 65);
+      const txGb = Math.round(rxGb * 0.24);
+
+      monthly.push({
+        month: monthLabel,
+        rx: rxGb * 1024 * 1024 * 1024,
+        tx: txGb * 1024 * 1024 * 1024,
+        rxGb,
+        txGb,
+        totalGb: rxGb + txGb,
+      });
+    }
+
+    const wwanTotalRx = daily.reduce((acc, d) => acc + d.rx, 0);
+    const wwanTotalTx = daily.reduce((acc, d) => acc + d.tx, 0);
+
+    const interfaces: VnStatInterface[] = [
+      {
+        name: 'wwan0',
+        alias: 'Cellular 5G/LTE WAN (Qualcomm X55)',
+        total: {
+          rx: wwanTotalRx,
+          tx: wwanTotalTx,
+          total: wwanTotalRx + wwanTotalTx,
+        },
+        today: {
+          rx: daily[daily.length - 1].rx,
+          tx: daily[daily.length - 1].tx,
+          total: daily[daily.length - 1].rx + daily[daily.length - 1].tx,
+        },
+        thisMonth: {
+          rx: monthly[monthly.length - 1].rx,
+          tx: monthly[monthly.length - 1].tx,
+          total: monthly[monthly.length - 1].rx + monthly[monthly.length - 1].tx,
+        },
+        hourly,
+        daily,
+        monthly,
+      },
+      {
+        name: 'eth0',
+        alias: '2.5GbE LAN/WAN Port',
+        total: {
+          rx: Math.round(wwanTotalRx * 0.8),
+          tx: Math.round(wwanTotalTx * 0.7),
+          total: Math.round(wwanTotalRx * 0.8 + wwanTotalTx * 0.7),
+        },
+        today: {
+          rx: Math.round(daily[daily.length - 1].rx * 0.8),
+          tx: Math.round(daily[daily.length - 1].tx * 0.7),
+          total: Math.round(daily[daily.length - 1].rx * 0.8 + daily[daily.length - 1].tx * 0.7),
+        },
+        thisMonth: {
+          rx: Math.round(monthly[monthly.length - 1].rx * 0.8),
+          tx: Math.round(monthly[monthly.length - 1].tx * 0.7),
+          total: Math.round(monthly[monthly.length - 1].rx * 0.8 + monthly[monthly.length - 1].tx * 0.7),
+        },
+        hourly: hourly.map((h) => ({
+          ...h,
+          rx: Math.round(h.rx * 0.8),
+          tx: Math.round(h.tx * 0.7),
+          rxMb: Math.round(h.rxMb * 0.8),
+          txMb: Math.round(h.txMb * 0.7),
+          totalMb: Math.round(h.totalMb * 0.75),
+        })),
+        daily: daily.map((d) => ({
+          ...d,
+          rx: Math.round(d.rx * 0.8),
+          tx: Math.round(d.tx * 0.7),
+          rxGb: +(d.rxGb * 0.8).toFixed(2),
+          txGb: +(d.txGb * 0.7).toFixed(2),
+          totalGb: +(d.totalGb * 0.75).toFixed(2),
+        })),
+        monthly: monthly.map((m) => ({
+          ...m,
+          rx: Math.round(m.rx * 0.8),
+          tx: Math.round(m.tx * 0.7),
+          rxGb: Math.round(m.rxGb * 0.8),
+          txGb: Math.round(m.txGb * 0.7),
+          totalGb: Math.round(m.totalGb * 0.75),
+        })),
+      },
+      {
+        name: 'br-lan',
+        alias: 'Local Bridge (Wi-Fi 6 + Switch)',
+        total: {
+          rx: Math.round(wwanTotalRx * 1.2),
+          tx: Math.round(wwanTotalTx * 1.1),
+          total: Math.round(wwanTotalRx * 1.2 + wwanTotalTx * 1.1),
+        },
+        today: {
+          rx: Math.round(daily[daily.length - 1].rx * 1.2),
+          tx: Math.round(daily[daily.length - 1].tx * 1.1),
+          total: Math.round(daily[daily.length - 1].rx * 1.2 + daily[daily.length - 1].tx * 1.1),
+        },
+        thisMonth: {
+          rx: Math.round(monthly[monthly.length - 1].rx * 1.2),
+          tx: Math.round(monthly[monthly.length - 1].tx * 1.1),
+          total: Math.round(monthly[monthly.length - 1].rx * 1.2 + monthly[monthly.length - 1].tx * 1.1),
+        },
+        hourly: hourly.map((h) => ({
+          ...h,
+          rx: Math.round(h.rx * 1.2),
+          tx: Math.round(h.tx * 1.1),
+          rxMb: Math.round(h.rxMb * 1.2),
+          txMb: Math.round(h.txMb * 1.1),
+          totalMb: Math.round(h.totalMb * 1.15),
+        })),
+        daily: daily.map((d) => ({
+          ...d,
+          rx: Math.round(d.rx * 1.2),
+          tx: Math.round(d.tx * 1.1),
+          rxGb: +(d.rxGb * 1.2).toFixed(2),
+          txGb: +(d.txGb * 1.1).toFixed(2),
+          totalGb: +(d.totalGb * 1.15).toFixed(2),
+        })),
+        monthly: monthly.map((m) => ({
+          ...m,
+          rx: Math.round(m.rx * 1.2),
+          tx: Math.round(m.tx * 1.1),
+          rxGb: Math.round(m.rxGb * 1.2),
+          txGb: Math.round(m.txGb * 1.1),
+          totalGb: Math.round(m.totalGb * 1.15),
+        })),
+      },
+    ];
+
+    return {
+      installed: true,
+      version: '2.10',
+      message: 'Active vnStat daemon monitoring 3 network interfaces',
+      interfaces,
+      activeInterface: 'wwan0',
+      lastUpdated: new Date().toLocaleTimeString(),
+    };
   }
 
-  // 30 days of daily data points
-  const daily: VnStatDailyPoint[] = [];
-  const today = new Date();
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const dateLabel = `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}`;
-    const fullDate = d.toISOString().split('T')[0];
+  public getData(): VnStatResult {
+    if (!this.data) {
+      this.data = this.initializeBaseline();
+      return this.data;
+    }
 
-    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-    const rxGb = +( (3.5 + Math.random() * 5.2) * (isWeekend ? 1.4 : 1.0) ).toFixed(2);
-    const txGb = +( (0.8 + Math.random() * 1.5) * (isWeekend ? 1.3 : 1.0) ).toFixed(2);
+    const now = Date.now();
+    const elapsedSec = Math.max(1, Math.min(60, Math.round((now - this.lastTick) / 1000)));
+    this.lastTick = now;
 
-    daily.push({
-      date: dateLabel,
-      fullDate,
-      rx: Math.round(rxGb * 1024 * 1024 * 1024),
-      tx: Math.round(txGb * 1024 * 1024 * 1024),
-      rxGb,
-      txGb,
-      totalGb: +(rxGb + txGb).toFixed(2),
-    });
+    // Small, realistic continuous byte flow (+1.2MB download, +0.3MB upload per 5-second interval)
+    const deltaRxMb = Math.round((0.8 + ((elapsedSec * 3) % 4)) * 0.4);
+    const deltaTxMb = Math.round((0.2 + ((elapsedSec * 2) % 2)) * 0.4);
+    const deltaRxBytes = deltaRxMb * 1024 * 1024;
+    const deltaTxBytes = deltaTxMb * 1024 * 1024;
+
+    for (const iface of this.data.interfaces) {
+      iface.total.rx += deltaRxBytes;
+      iface.total.tx += deltaTxBytes;
+      iface.total.total = iface.total.rx + iface.total.tx;
+
+      iface.today.rx += deltaRxBytes;
+      iface.today.tx += deltaTxBytes;
+      iface.today.total = iface.today.rx + iface.today.tx;
+
+      iface.thisMonth.rx += deltaRxBytes;
+      iface.thisMonth.tx += deltaTxBytes;
+      iface.thisMonth.total = iface.thisMonth.rx + iface.thisMonth.tx;
+
+      if (iface.hourly.length > 0) {
+        const cur = iface.hourly[iface.hourly.length - 1];
+        cur.rx += deltaRxBytes;
+        cur.tx += deltaTxBytes;
+        cur.rxMb += deltaRxMb;
+        cur.txMb += deltaTxMb;
+        cur.totalMb = cur.rxMb + cur.txMb;
+      }
+
+      if (iface.daily.length > 0) {
+        const curDay = iface.daily[iface.daily.length - 1];
+        curDay.rx += deltaRxBytes;
+        curDay.tx += deltaTxBytes;
+        curDay.rxGb = +(curDay.rx / (1024 * 1024 * 1024)).toFixed(2);
+        curDay.txGb = +(curDay.tx / (1024 * 1024 * 1024)).toFixed(2);
+        curDay.totalGb = +(curDay.rxGb + curDay.txGb).toFixed(2);
+      }
+    }
+
+    this.data.lastUpdated = new Date().toLocaleTimeString();
+    return this.data;
   }
-
-  // 12 months of monthly data points
-  const monthly: VnStatMonthlyPoint[] = [];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const curMonthIdx = today.getMonth();
-  for (let i = 11; i >= 0; i--) {
-    const mIdx = (curMonthIdx - i + 12) % 12;
-    const year = today.getFullYear() - (curMonthIdx - i < 0 ? 1 : 0);
-    const monthLabel = `${months[mIdx]} ${year}`;
-
-    const rxGb = Math.round(110 + Math.random() * 95);
-    const txGb = Math.round(25 + Math.random() * 25);
-
-    monthly.push({
-      month: monthLabel,
-      rx: rxGb * 1024 * 1024 * 1024,
-      tx: txGb * 1024 * 1024 * 1024,
-      rxGb,
-      txGb,
-      totalGb: rxGb + txGb,
-    });
-  }
-
-  const wwanTotalRx = daily.reduce((acc, d) => acc + d.rx, 0);
-  const wwanTotalTx = daily.reduce((acc, d) => acc + d.tx, 0);
-
-  const interfaces: VnStatInterface[] = [
-    {
-      name: 'wwan0',
-      alias: 'Cellular 5G/LTE WAN (Qualcomm X55)',
-      total: {
-        rx: wwanTotalRx,
-        tx: wwanTotalTx,
-        total: wwanTotalRx + wwanTotalTx,
-      },
-      today: {
-        rx: daily[daily.length - 1].rx,
-        tx: daily[daily.length - 1].tx,
-        total: daily[daily.length - 1].rx + daily[daily.length - 1].tx,
-      },
-      thisMonth: {
-        rx: monthly[monthly.length - 1].rx,
-        tx: monthly[monthly.length - 1].tx,
-        total: monthly[monthly.length - 1].rx + monthly[monthly.length - 1].tx,
-      },
-      hourly,
-      daily,
-      monthly,
-    },
-    {
-      name: 'eth0',
-      alias: '2.5GbE LAN/WAN Port',
-      total: {
-        rx: Math.round(wwanTotalRx * 0.8),
-        tx: Math.round(wwanTotalTx * 0.7),
-        total: Math.round((wwanTotalRx * 0.8) + (wwanTotalTx * 0.7)),
-      },
-      today: {
-        rx: Math.round(daily[daily.length - 1].rx * 0.8),
-        tx: Math.round(daily[daily.length - 1].tx * 0.7),
-        total: Math.round(daily[daily.length - 1].rx * 0.8 + daily[daily.length - 1].tx * 0.7),
-      },
-      thisMonth: {
-        rx: Math.round(monthly[monthly.length - 1].rx * 0.8),
-        tx: Math.round(monthly[monthly.length - 1].tx * 0.7),
-        total: Math.round(monthly[monthly.length - 1].rx * 0.8 + monthly[monthly.length - 1].tx * 0.7),
-      },
-      hourly: hourly.map((h) => ({
-        ...h,
-        rx: Math.round(h.rx * 0.8),
-        tx: Math.round(h.tx * 0.7),
-        rxMb: Math.round(h.rxMb * 0.8),
-        txMb: Math.round(h.txMb * 0.7),
-        totalMb: Math.round(h.totalMb * 0.75),
-      })),
-      daily: daily.map((d) => ({
-        ...d,
-        rx: Math.round(d.rx * 0.8),
-        tx: Math.round(d.tx * 0.7),
-        rxGb: +(d.rxGb * 0.8).toFixed(2),
-        txGb: +(d.txGb * 0.7).toFixed(2),
-        totalGb: +(d.totalGb * 0.75).toFixed(2),
-      })),
-      monthly: monthly.map((m) => ({
-        ...m,
-        rx: Math.round(m.rx * 0.8),
-        tx: Math.round(m.tx * 0.7),
-        rxGb: Math.round(m.rxGb * 0.8),
-        txGb: Math.round(m.txGb * 0.7),
-        totalGb: Math.round(m.totalGb * 0.75),
-      })),
-    },
-    {
-      name: 'br-lan',
-      alias: 'Local Bridge (Wi-Fi 6 + Switch)',
-      total: {
-        rx: Math.round(wwanTotalRx * 1.2),
-        tx: Math.round(wwanTotalTx * 1.1),
-        total: Math.round((wwanTotalRx * 1.2) + (wwanTotalTx * 1.1)),
-      },
-      today: {
-        rx: Math.round(daily[daily.length - 1].rx * 1.2),
-        tx: Math.round(daily[daily.length - 1].tx * 1.1),
-        total: Math.round(daily[daily.length - 1].rx * 1.2 + daily[daily.length - 1].tx * 1.1),
-      },
-      thisMonth: {
-        rx: Math.round(monthly[monthly.length - 1].rx * 1.2),
-        tx: Math.round(monthly[monthly.length - 1].tx * 1.1),
-        total: Math.round(monthly[monthly.length - 1].rx * 1.2 + monthly[monthly.length - 1].tx * 1.1),
-      },
-      hourly: hourly.map((h) => ({
-        ...h,
-        rx: Math.round(h.rx * 1.2),
-        tx: Math.round(h.tx * 1.1),
-        rxMb: Math.round(h.rxMb * 1.2),
-        txMb: Math.round(h.txMb * 1.1),
-        totalMb: Math.round(h.totalMb * 1.15),
-      })),
-      daily: daily.map((d) => ({
-        ...d,
-        rx: Math.round(d.rx * 1.2),
-        tx: Math.round(d.tx * 1.1),
-        rxGb: +(d.rxGb * 1.2).toFixed(2),
-        txGb: +(d.txGb * 1.1).toFixed(2),
-        totalGb: +(d.totalGb * 1.15).toFixed(2),
-      })),
-      monthly: monthly.map((m) => ({
-        ...m,
-        rx: Math.round(m.rx * 1.2),
-        tx: Math.round(m.tx * 1.1),
-        rxGb: Math.round(m.rxGb * 1.2),
-        txGb: Math.round(m.txGb * 1.1),
-        totalGb: Math.round(m.totalGb * 1.15),
-      })),
-    },
-  ];
-
-  return {
-    installed: true,
-    version: '2.10',
-    message: 'Active vnStat daemon monitoring 3 network interfaces',
-    interfaces,
-    activeInterface: 'wwan0',
-    lastUpdated: new Date().toLocaleTimeString(),
-  };
 }
+
+export const persistentVnStatEngine = new PersistentVnStatEngine();
 
 export const logsApi = {
   async getLogs(profile: RouterProfile, options: LogFilterOptions): Promise<{ total: number; items: LogEntry[]; raw: string }> {
@@ -425,43 +485,57 @@ export const logsApi = {
           // Parse vnstat JSON format into VnStatInterface
           const ifaces: VnStatInterface[] = res.rawVnstat.interfaces.map((rawIf: any) => {
             const traffic = rawIf.traffic || {};
-            const totalRx = traffic.total?.rx || 0;
-            const totalTx = traffic.total?.tx || 0;
 
-            const hourly: VnStatHourlyPoint[] = (traffic.hour || []).map((h: any) => {
-              const rxMb = Math.round((h.rx || 0) / (1024 * 1024));
-              const txMb = Math.round((h.tx || 0) / (1024 * 1024));
+            // vnStat standard JSON reports in KiB (1 KiB = 1024 bytes)
+            const isKib = (traffic.total?.rx || 0) < 100_000_000_000;
+            const toBytes = (val: number) => (isKib ? val * 1024 : val);
+
+            const totalRx = toBytes(traffic.total?.rx || 0);
+            const totalTx = toBytes(traffic.total?.tx || 0);
+
+            const rawHours = traffic.hour || traffic.hours || [];
+            const hourly: VnStatHourlyPoint[] = rawHours.map((h: any) => {
+              const rxBytes = toBytes(h.rx || 0);
+              const txBytes = toBytes(h.tx || 0);
+              const rxMb = Math.round(rxBytes / (1024 * 1024));
+              const txMb = Math.round(txBytes / (1024 * 1024));
               return {
                 time: `${h.time?.hour?.toString().padStart(2, '0') || '00'}:00`,
-                rx: h.rx || 0,
-                tx: h.tx || 0,
+                rx: rxBytes,
+                tx: txBytes,
                 rxMb,
                 txMb,
                 totalMb: rxMb + txMb,
               };
             });
 
-            const daily: VnStatDailyPoint[] = (traffic.day || []).map((d: any) => {
-              const rxGb = +((d.rx || 0) / (1024 * 1024 * 1024)).toFixed(2);
-              const txGb = +((d.tx || 0) / (1024 * 1024 * 1024)).toFixed(2);
+            const rawDays = traffic.day || traffic.days || [];
+            const daily: VnStatDailyPoint[] = rawDays.map((d: any) => {
+              const rxBytes = toBytes(d.rx || 0);
+              const txBytes = toBytes(d.tx || 0);
+              const rxGb = +(rxBytes / (1024 * 1024 * 1024)).toFixed(2);
+              const txGb = +(txBytes / (1024 * 1024 * 1024)).toFixed(2);
               return {
                 date: `${d.date?.month || 0}/${d.date?.day || 0}`,
                 fullDate: `${d.date?.year}-${d.date?.month}-${d.date?.day}`,
-                rx: d.rx || 0,
-                tx: d.tx || 0,
+                rx: rxBytes,
+                tx: txBytes,
                 rxGb,
                 txGb,
                 totalGb: +(rxGb + txGb).toFixed(2),
               };
             });
 
-            const monthly: VnStatMonthlyPoint[] = (traffic.month || []).map((m: any) => {
-              const rxGb = Math.round((m.rx || 0) / (1024 * 1024 * 1024));
-              const txGb = Math.round((m.tx || 0) / (1024 * 1024 * 1024));
+            const rawMonths = traffic.month || traffic.months || [];
+            const monthly: VnStatMonthlyPoint[] = rawMonths.map((m: any) => {
+              const rxBytes = toBytes(m.rx || 0);
+              const txBytes = toBytes(m.tx || 0);
+              const rxGb = Math.round(rxBytes / (1024 * 1024 * 1024));
+              const txGb = Math.round(txBytes / (1024 * 1024 * 1024));
               return {
                 month: `${m.date?.year || 2026}-${m.date?.month || 1}`,
-                rx: m.rx || 0,
-                tx: m.tx || 0,
+                rx: rxBytes,
+                tx: txBytes,
                 rxGb,
                 txGb,
                 totalGb: rxGb + txGb,
@@ -505,7 +579,7 @@ export const logsApi = {
       }
     }
 
-    return generateMockVnStat();
+    return persistentVnStatEngine.getData();
   },
 
   async installVnStat(profile: RouterProfile): Promise<{ success: boolean; message: string }> {

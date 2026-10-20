@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -19,11 +19,14 @@ import {
   Radio,
   Activity,
   Layers,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useLogsStore } from '../../store/useLogsStore';
 
 export const LogAnalyticsView: React.FC = () => {
   const { logs, getSeverityCounts, getTopDaemons, getTimelineData } = useLogsStore();
+  const [isTimelineMinimized, setIsTimelineMinimized] = useState(false);
 
   const severityCounts = getSeverityCounts();
   const topDaemons = getTopDaemons();
@@ -124,107 +127,145 @@ export const LogAnalyticsView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 text-xs font-mono">
-            <span className="flex items-center gap-1.5 text-rose-400">
-              <span className="w-2 h-2 rounded-full bg-rose-500" /> Errors
-            </span>
-            <span className="flex items-center gap-1.5 text-amber-400">
-              <span className="w-2 h-2 rounded-full bg-amber-500" /> Warnings
-            </span>
-            <span className="flex items-center gap-1.5 text-cyan-400">
-              <span className="w-2 h-2 rounded-full bg-cyan-500" /> Notices
-            </span>
-            <span className="flex items-center gap-1.5 text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Info
-            </span>
+          <div className="flex items-center gap-3">
+            {!isTimelineMinimized && (
+              <div className="hidden sm:flex items-center gap-3 text-xs font-mono mr-1">
+                <span className="flex items-center gap-1.5 text-rose-400">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" /> Errors
+                </span>
+                <span className="flex items-center gap-1.5 text-amber-400">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" /> Warnings
+                </span>
+                <span className="flex items-center gap-1.5 text-cyan-400">
+                  <span className="w-2 h-2 rounded-full bg-cyan-500" /> Notices
+                </span>
+                <span className="flex items-center gap-1.5 text-emerald-400">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" /> Info
+                </span>
+              </div>
+            )}
+
+            <button
+              onClick={() => setIsTimelineMinimized(!isTimelineMinimized)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-slate-800 transition-colors"
+              title={isTimelineMinimized ? 'Expand timeline chart' : 'Minimize timeline chart'}
+            >
+              {isTimelineMinimized ? (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Expand Graph</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Minimize</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        <div className="h-64 w-full">
-          {timelineData.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-slate-500 text-xs">
-              No timeline data available for current selection.
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={timelineData}>
-                <defs>
-                  <linearGradient id="colorError" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.6} />
-                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorWarn" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.6} />
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorNotice" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorInfo" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="time"
-                  stroke="#475569"
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={{ stroke: '#334155' }}
-                />
-                <YAxis
-                  stroke="#475569"
-                  fontSize={10}
-                  tickLine={false}
-                  axisLine={{ stroke: '#334155' }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#090d16',
-                    borderColor: '#334155',
-                    borderRadius: '0.75rem',
-                    fontSize: '11px',
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                  }}
-                  itemStyle={{ color: '#f8fafc' }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="error"
-                  name="Errors"
-                  stackId="1"
-                  stroke="#f43f5e"
-                  fill="url(#colorError)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="warn"
-                  name="Warnings"
-                  stackId="1"
-                  stroke="#f59e0b"
-                  fill="url(#colorWarn)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="notice"
-                  name="Notices"
-                  stackId="1"
-                  stroke="#38bdf8"
-                  fill="url(#colorNotice)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="info"
-                  name="Info"
-                  stackId="1"
-                  stroke="#10b981"
-                  fill="url(#colorInfo)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </div>
+        {isTimelineMinimized ? (
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between text-xs text-slate-300">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              Event Timeline Graph Minimized
+            </span>
+            <button
+              onClick={() => setIsTimelineMinimized(false)}
+              className="text-blue-400 hover:underline font-semibold flex items-center gap-1"
+            >
+              <span>Show Chart</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="h-64 w-full">
+            {timelineData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-slate-500 text-xs">
+                No timeline data available for current selection.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={timelineData}>
+                  <defs>
+                    <linearGradient id="colorError" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.6} />
+                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorWarn" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.6} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorNotice" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorInfo" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="time"
+                    stroke="#475569"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={{ stroke: '#334155' }}
+                  />
+                  <YAxis
+                    stroke="#475569"
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={{ stroke: '#334155' }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#090d16',
+                      borderColor: '#334155',
+                      borderRadius: '0.75rem',
+                      fontSize: '11px',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                    }}
+                    itemStyle={{ color: '#f8fafc' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="error"
+                    name="Errors"
+                    stackId="1"
+                    stroke="#f43f5e"
+                    fill="url(#colorError)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="warn"
+                    name="Warnings"
+                    stackId="1"
+                    stroke="#f59e0b"
+                    fill="url(#colorWarn)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="notice"
+                    name="Notices"
+                    stackId="1"
+                    stroke="#38bdf8"
+                    fill="url(#colorNotice)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="info"
+                    name="Info"
+                    stackId="1"
+                    stroke="#10b981"
+                    fill="url(#colorInfo)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Two Column Section: Top Daemons & Severity Ratio */}
