@@ -341,16 +341,11 @@ export const cellularServicesApi = {
   getSmsMessages: async (
     profile: RouterProfile
   ): Promise<{ messages: SmsMessage[]; storage: CellularVoiceStatus['simStorage'] }> => {
-    try {
-      const res = await safeInvoke<{
+    if (isTauri()) {
+      return await safeInvoke<{
         messages: SmsMessage[];
         storage: CellularVoiceStatus['simStorage'];
       }>('get_sms_messages', { profile });
-      if (res && Array.isArray(res.messages)) {
-        return res;
-      }
-    } catch {
-      // Fallback to mock
     }
     return mockCellularServices.getMessages();
   },
@@ -360,17 +355,12 @@ export const cellularServicesApi = {
     number: string,
     text: string
   ): Promise<{ success: boolean; message: string; sms?: SmsMessage }> => {
-    try {
-      const res = await safeInvoke<{
+    if (isTauri()) {
+      return await safeInvoke<{
         success: boolean;
         message: string;
         sms?: SmsMessage;
       }>('send_sms_message', { profile, number, text });
-      if (res && res.success) {
-        return res;
-      }
-    } catch {
-      // Fallback to mock
     }
     const sms = mockCellularServices.sendMessage(number, text);
     return { success: true, message: 'SMS sent via cellular network', sms };
@@ -380,29 +370,19 @@ export const cellularServicesApi = {
     profile: RouterProfile,
     messageId: string
   ): Promise<{ success: boolean; message: string }> => {
-    try {
-      const res = await safeInvoke<{ success: boolean; message: string }>('delete_sms_message', {
+    if (isTauri()) {
+      return await safeInvoke<{ success: boolean; message: string }>('delete_sms_message', {
         profile,
         messageId,
       });
-      if (res && res.success) {
-        return res;
-      }
-    } catch {
-      // Fallback
     }
     mockCellularServices.deleteMessage(messageId);
     return { success: true, message: 'SMS message deleted' };
   },
 
   executeUssdCode: async (profile: RouterProfile, code: string): Promise<UssdSession> => {
-    try {
-      const res = await safeInvoke<UssdSession>('execute_ussd_code', { profile, code });
-      if (res && res.response) {
-        return res;
-      }
-    } catch {
-      // Fallback
+    if (isTauri()) {
+      return await safeInvoke<UssdSession>('execute_ussd_code', { profile, code });
     }
     return mockCellularServices.executeUssd(code);
   },
@@ -410,19 +390,15 @@ export const cellularServicesApi = {
   initiateVoiceCall: async (
     profile: RouterProfile,
     number: string
-  ): Promise<{ success: boolean; callId: string; number: string; status: string }> => {
-    try {
-      const res = await safeInvoke<{
+  ): Promise<{ success: boolean; callId: string; number: string; status: string; message?: string }> => {
+    if (isTauri()) {
+      return await safeInvoke<{
         success: boolean;
         callId: string;
         number: string;
         status: string;
+        message?: string;
       }>('initiate_voice_call', { profile, number });
-      if (res && res.success) {
-        return res;
-      }
-    } catch {
-      // Fallback
     }
     const call = mockCellularServices.initiateCall(number);
     return { success: true, callId: call.id, number: call.number, status: call.status };
@@ -432,29 +408,19 @@ export const cellularServicesApi = {
     profile: RouterProfile,
     callId?: string
   ): Promise<{ success: boolean; message: string }> => {
-    try {
-      const res = await safeInvoke<{ success: boolean; message: string }>('hangup_voice_call', {
+    if (isTauri()) {
+      return await safeInvoke<{ success: boolean; message: string }>('hangup_voice_call', {
         profile,
         callId,
       });
-      if (res && res.success) {
-        return res;
-      }
-    } catch {
-      // Fallback
     }
     mockCellularServices.hangupCall();
     return { success: true, message: 'Call terminated' };
   },
 
   getVoiceCallStatus: async (profile: RouterProfile): Promise<CellularVoiceStatus> => {
-    try {
-      const res = await safeInvoke<CellularVoiceStatus>('get_voice_call_status', { profile });
-      if (res) {
-        return res;
-      }
-    } catch {
-      // Fallback
+    if (isTauri()) {
+      return await safeInvoke<CellularVoiceStatus>('get_voice_call_status', { profile });
     }
     return mockCellularServices.getVoiceStatus();
   },

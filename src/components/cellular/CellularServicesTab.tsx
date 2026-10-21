@@ -13,6 +13,7 @@ import { VoiceDialerView } from './VoiceDialerView';
 import { UssdRunnerView } from './UssdRunnerView';
 import { SimVoiceSettingsView } from './SimVoiceSettingsView';
 import { useCellularServicesStore } from '../../store/useCellularServicesStore';
+import { useCellularStore } from '../../store/useCellularStore';
 
 type CellularSubTab = 'messages' | 'dialer' | 'ussd' | 'settings';
 
@@ -22,11 +23,14 @@ export const CellularServicesTab: React.FC = () => {
     messages,
     simStorage,
     activeCall,
+    voiceStatus,
     fetchMessages,
     fetchVoiceStatus,
     setDialerNumber,
     startCall,
   } = useCellularServicesStore();
+
+  const { status: carrierStatus } = useCellularStore();
 
   useEffect(() => {
     fetchMessages();
@@ -68,13 +72,19 @@ export const CellularServicesTab: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <div className="px-3 py-1.5 bg-slate-950/70 border border-slate-800 rounded-xl flex items-center gap-2">
               <Radio className="w-3.5 h-3.5 text-blue-400" />
-              <span className="text-slate-300 font-medium">Dialog 5G SA</span>
-              <span className="text-[10px] text-slate-400 font-mono">41302</span>
+              <span className="text-slate-300 font-medium">
+                {carrierStatus?.operator.name || 'Cellular Modem'}
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono">
+                {carrierStatus?.operator.plmn || 'Auto'}
+              </span>
             </div>
 
             <div className="px-3 py-1.5 bg-slate-950/70 border border-slate-800 rounded-xl flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-slate-200 font-mono font-medium">+94 77 123 4567</span>
+              <span className="text-slate-200 font-mono font-medium">
+                {voiceStatus?.msisdn || 'SIM Provisioned'}
+              </span>
             </div>
 
             <div className="px-3 py-1.5 bg-slate-950/70 border border-slate-800 rounded-xl flex items-center gap-1.5">

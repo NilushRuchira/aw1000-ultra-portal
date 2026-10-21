@@ -12,6 +12,7 @@ import {
   Volume2,
   VolumeX,
   Clock,
+  AlertCircle,
 } from 'lucide-react';
 import { useCellularServicesStore } from '../../store/useCellularServicesStore';
 
@@ -43,6 +44,7 @@ export const VoiceDialerView: React.FC = () => {
     isMuted,
     isSpeaker,
     isDialing,
+    callError,
     setDialerNumber,
     appendToDialer,
     backspaceDialer,
@@ -166,7 +168,14 @@ export const VoiceDialerView: React.FC = () => {
           </div>
         ) : (
           // DIALPAD INTERFACE
-          <div className="w-full max-w-xs space-y-5">
+          <div className="w-full max-w-xs space-y-4">
+            {callError && (
+              <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span className="text-[11px] leading-tight">{callError}</span>
+              </div>
+            )}
+
             {/* Number Input Screen */}
             <div className="relative w-full bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 flex items-center justify-between">
               <input

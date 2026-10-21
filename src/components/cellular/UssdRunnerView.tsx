@@ -7,6 +7,7 @@ import {
   Send,
   Clock,
   ArrowRight,
+  AlertCircle,
 } from 'lucide-react';
 import { useCellularServicesStore } from '../../store/useCellularServicesStore';
 import { USSD_SHORTCUTS } from '../../services/cellularServicesBridge';
@@ -18,6 +19,7 @@ export const UssdRunnerView: React.FC = () => {
     ussdHistory,
     activeUssdSession,
     isRunningUssd,
+    ussdError,
     setUssdInput,
     runUssd,
     clearUssdSession,
@@ -92,6 +94,17 @@ export const UssdRunnerView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Router USSD Error Banner */}
+      {ussdError && (
+        <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-2xl text-xs flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>{ussdError}</span>
+          </div>
+          <span className="text-[10px] text-rose-400 font-mono">Modem / Network Error</span>
+        </div>
+      )}
 
       {/* Active USSD Session Window */}
       {activeUssdSession && (

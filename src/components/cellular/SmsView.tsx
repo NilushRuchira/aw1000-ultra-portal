@@ -12,6 +12,7 @@ import {
   X,
   Clock,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 import { useCellularServicesStore } from '../../store/useCellularServicesStore';
 import type { SmsMessage } from '../../types/cellularServices';
@@ -32,6 +33,7 @@ export const SmsView: React.FC<SmsViewProps> = ({ onStartCallWithNumber }) => {
     isLoadingSms,
     isSendingSms,
     smsSearchQuery,
+    smsError,
     setActiveSmsFilter,
     setSelectedMessage,
     setComposeOpen,
@@ -100,6 +102,22 @@ export const SmsView: React.FC<SmsViewProps> = ({ onStartCallWithNumber }) => {
           <span>{notification}</span>
           <button onClick={() => setNotification(null)} className="text-emerald-400 hover:text-white">
             <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Router Error Banner */}
+      {smsError && (
+        <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>{smsError}</span>
+          </div>
+          <button
+            onClick={() => fetchMessages()}
+            className="text-[11px] underline text-rose-300 hover:text-white shrink-0 ml-3"
+          >
+            Retry Router Query
           </button>
         </div>
       )}

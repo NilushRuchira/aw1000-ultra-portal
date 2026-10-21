@@ -20,12 +20,14 @@ interface CellularServicesState {
   isLoadingSms: boolean;
   isSendingSms: boolean;
   smsSearchQuery: string;
+  smsError: string | null;
 
   // USSD
   ussdInput: string;
   ussdHistory: UssdSession[];
   activeUssdSession: UssdSession | null;
   isRunningUssd: boolean;
+  ussdError: string | null;
 
   // Calls
   dialerNumber: string;
@@ -35,6 +37,7 @@ interface CellularServicesState {
   isMuted: boolean;
   isSpeaker: boolean;
   isDialing: boolean;
+  callError: string | null;
   voiceStatus: CellularVoiceStatus | null;
 
   // Actions
@@ -44,6 +47,7 @@ interface CellularServicesState {
   setComposeRecipient: (recipient: string) => void;
   setComposeText: (text: string) => void;
   setSmsSearchQuery: (q: string) => void;
+  clearErrors: () => void;
   fetchMessages: () => Promise<void>;
   sendMessage: (recipient: string, text: string) => Promise<boolean>;
   deleteMessage: (id: string) => Promise<boolean>;
@@ -72,19 +76,21 @@ export const useCellularServicesStore = create<CellularServicesState>((set, get)
   composeRecipient: '',
   composeText: '',
   simStorage: {
-    used: 5,
+    used: 0,
     total: 50,
     preferred: 'SIM',
   },
   isLoadingSms: false,
   isSendingSms: false,
   smsSearchQuery: '',
+  smsError: null,
 
   // USSD default state
   ussdInput: '*100#',
   ussdHistory: [],
   activeUssdSession: null,
   isRunningUssd: false,
+  ussdError: null,
 
   // Calls default state
   dialerNumber: '',
@@ -94,7 +100,10 @@ export const useCellularServicesStore = create<CellularServicesState>((set, get)
   isMuted: false,
   isSpeaker: false,
   isDialing: false,
+  callError: null,
   voiceStatus: null,
+
+  clearErrors: () => set({ smsError: null, ussdError: null, callError: null }),
 
   // SMS Actions
   setActiveSmsFilter: (filter) => set({ activeSmsFilter: filter }),
@@ -105,7 +114,7 @@ export const useCellularServicesStore = create<CellularServicesState>((set, get)
   setSmsSearchQuery: (q) => set({ smsSearchQuery: q }),
 
   fetchMessages: async () => {
-    set({ isLoadingSms: true });
+    set({ isLoadingSms: true, smsError: null });
     try {
       const profile = useProfileStore.getState().activeProfile;
       const data = await cellularServicesApi.getSmsMessages(profile);
@@ -113,15 +122,17 @@ export const useCellularServicesStore = create<CellularServicesState>((set, get)
         messages: data.messages,
         simStorage: data.storage,
         isLoadingSms: false,
+        smsError: null,
       });
-    } catch {
-      set({ isLoadingSms: false });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set({ isLoadingSms: false, smsError: msg });
     }
   },
 
   sendMessage: async (recipient: string, text: string) => {
     if (!recipient.trim() || !text.trim()) return false;
-    set({ isSendingSms: true });
+    set({ isSendingSms: true, smsError: null });
     try {
       const profile = useProfileStore.getState().activeProfile;
       const res = await cellularServicesApi.sendSmsMessage(profile, recipient, text);
@@ -132,13 +143,15 @@ export const useCellularServicesStore = create<CellularServicesState>((set, get)
           composeRecipient: '',
           composeText: '',
           isSendingSms: false,
+          smsError: null,
         }));
         return true;
       }
-      set({ isSendingSms: false });
+      set({ isSendingSms: false, smsError: res.message || 'SMS dispatch failed' });
       return false;
-    } catch {
-      set({ isSendingSms: false });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set({ isSendingSms: false, smsError: msg });
       return false;
     }
   },
@@ -152,7 +165,9 @@ export const useCellularServicesStore = create<CellularServicesState>((set, get)
         selectedMessage: state.selectedMessage?.id === id ? null : state.selectedMessage,
       }));
       return true;
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set({ smsError: msg });
       return false;
     }
   },
@@ -163,7 +178,7 @@ export const useCellularServicesStore = create<CellularServicesState>((set, get)
   runUssd: async (code: string) => {
     const trimmed = code.trim();
     if (!trimmed) return;
-    set({ isRunningUssd: true });
+    set({ isRunningUssd: true, ussdError: null });
     try {
       const profile = useProfileStore.getState().activeProfile;
       const session = await cellularServicesApi.executeUssdCode(profile, trimmed);
@@ -171,14 +186,16 @@ export const useCellularServicesStore = create<CellularServicesState>((set, get)
         activeUssdSession: session,
         ussdHistory: [session, ...state.ussdHistory.slice(0, 19)],
         isRunningUssd: false,
+        ussdError: null,
         ussdInput: session.actionRequired ? '' : state.ussdInput,
       }));
-    } catch {
-      set({ isRunningUssd: false });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set({ isRunningUssd: false, ussdError: msg });
     }
   },
 
-  clearUssdSession: () => set({ activeUssdSession: null }),
+  clearUssdSession: () => set({ activeUssdSession: null, ussdError: null }),
 
   // Dialer & Call Actions
   setDialerNumber: (num: string) => set({ dialerNumber: num }),
@@ -192,14 +209,14 @@ export const useCellularServicesStore = create<CellularServicesState>((set, get)
   startCall: async (number: string) => {
     const clean = number.trim();
     if (!clean) return;
-    set({ isDialing: true });
+    set({ isDialing: true, callError: null });
     try {
       const profile = useProfileStore.getState().activeProfile;
       const res = await cellularServicesApi.initiateVoiceCall(profile, clean);
       const call: VoiceCall = {
         id: res.callId,
         number: clean,
-        name: clean === '+94777890123' ? 'Network Operations Tech' : 'Outgoing VoLTE Call',
+        name: 'Live Cellular Call',
         direction: 'outgoing',
         durationSeconds: 0,
         timestamp: new Date().toLocaleTimeString(),
@@ -211,9 +228,11 @@ export const useCellularServicesStore = create<CellularServicesState>((set, get)
         callDuration: 0,
         isDialing: false,
         dialerNumber: '',
+        callError: null,
       });
-    } catch {
-      set({ isDialing: false });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set({ isDialing: false, callError: msg });
     }
   },
 
