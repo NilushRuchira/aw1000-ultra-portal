@@ -2,6 +2,7 @@ import React from 'react';
 import {
   LayoutDashboard,
   Radio,
+  PhoneCall,
   Wifi,
   Laptop2,
   Terminal,
@@ -21,8 +22,13 @@ export const MobileBottomNav: React.FC = () => {
     },
     {
       id: 'network' as NavigationTab,
-      label: 'Cellular',
+      label: '5G Net',
       icon: Radio,
+    },
+    {
+      id: 'cellular' as NavigationTab,
+      label: 'Cellular',
+      icon: PhoneCall,
     },
     {
       id: 'wifi' as NavigationTab,

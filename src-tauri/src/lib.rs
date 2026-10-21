@@ -3,8 +3,10 @@ pub mod models;
 
 use commands::{
     cellular::{
-        get_band_lock, get_cell_lock, get_cellular_status, get_neighbor_cells, manage_apn,
-        scan_operators, set_band_lock, set_cell_lock, set_operator_mode,
+        delete_sms_message, execute_ussd_code, get_band_lock, get_cell_lock, get_cellular_status,
+        get_neighbor_cells, get_sms_messages, get_voice_call_status, hangup_voice_call,
+        initiate_voice_call, manage_apn, scan_operators, send_sms_message, set_band_lock,
+        set_cell_lock, set_operator_mode,
     },
     logs::{get_router_logs, get_vnstat_traffic, install_vnstat},
     profile::{delete_profile, get_profiles, save_profile},
@@ -50,6 +52,13 @@ pub fn run() {
             scan_operators,
             set_operator_mode,
             manage_apn,
+            get_sms_messages,
+            send_sms_message,
+            delete_sms_message,
+            execute_ussd_code,
+            initiate_voice_call,
+            hangup_voice_call,
+            get_voice_call_status,
             get_router_logs,
             get_vnstat_traffic,
             install_vnstat,
