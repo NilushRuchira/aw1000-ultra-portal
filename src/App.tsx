@@ -11,6 +11,7 @@ import { ConnectedDevicesTab } from './components/devices/ConnectedDevicesTab';
 import { TerminalDiagnosticsTab } from './components/terminal/TerminalDiagnosticsTab';
 import { LogsTab } from './components/logs/LogsTab';
 import { SettingsTab } from './components/setup/SettingsTab';
+import { Toaster } from './components/common/Toaster';
 import { useRouterStore } from './store/useRouterStore';
 import { useProfileStore } from './store/useProfileStore';
 
@@ -68,6 +69,7 @@ const RouterPortalApp: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans selection:bg-blue-500/30 selection:text-blue-200">
+      <Toaster />
       <Navbar onOpenSettings={() => setActiveTab('settings')} />
       <div className="flex flex-1 overflow-hidden relative">
         <Sidebar />

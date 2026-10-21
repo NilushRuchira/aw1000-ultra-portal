@@ -2,7 +2,12 @@ import type { RouterProfile, SystemInfo, WanInfo, WifiSSID, ConnectedDevice } fr
 
 // Check if running inside Tauri desktop environment
 export const isTauri = (): boolean => {
-  return typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window);
+  if (typeof window === 'undefined') return false;
+  return (
+    !!(window as unknown as { isTauri?: boolean }).isTauri ||
+    '__TAURI_INTERNALS__' in window ||
+    '__TAURI__' in window
+  );
 };
 
 // Safe wrapper for Tauri invoke

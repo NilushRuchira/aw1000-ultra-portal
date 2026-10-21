@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Mail,
   Send,
@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useCellularServicesStore } from '../../store/useCellularServicesStore';
+import { toast } from '../../store/useToastStore';
 import type { SmsMessage } from '../../types/cellularServices';
 
 interface SmsViewProps {
@@ -45,26 +46,25 @@ export const SmsView: React.FC<SmsViewProps> = ({ onStartCallWithNumber }) => {
     deleteMessage,
   } = useCellularServicesStore();
 
-  const [notification, setNotification] = useState<string | null>(null);
-
-  const showNotification = (msg: string) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(null), 3500);
-  };
-
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!composeRecipient.trim() || !composeText.trim()) return;
     const ok = await sendMessage(composeRecipient, composeText);
     if (ok) {
-      showNotification('SMS message dispatched successfully to network.');
+      toast.success('SMS Dispatched', `SMS successfully transmitted to ${composeRecipient} via router modem.`);
+    } else {
+      const err = useCellularServicesStore.getState().smsError || 'Failed to send SMS via router modem';
+      toast.error('SMS Send Failed', err);
     }
   };
 
   const handleDelete = async (id: string) => {
     const ok = await deleteMessage(id);
     if (ok) {
-      showNotification('SMS deleted from storage.');
+      toast.success('SMS Deleted', 'Message deleted from modem SIM storage.');
+    } else {
+      const err = useCellularServicesStore.getState().smsError || 'Failed to delete SMS';
+      toast.error('Delete Failed', err);
     }
   };
 
@@ -96,16 +96,6 @@ export const SmsView: React.FC<SmsViewProps> = ({ onStartCallWithNumber }) => {
 
   return (
     <div className="space-y-4">
-      {/* Toast Notification */}
-      {notification && (
-        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-          <span>{notification}</span>
-          <button onClick={() => setNotification(null)} className="text-emerald-400 hover:text-white">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
       {/* Router Error Banner */}
       {smsError && (
         <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs flex items-center justify-between animate-in fade-in slide-in-from-top-2">

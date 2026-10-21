@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useCellularServicesStore } from '../../store/useCellularServicesStore';
+import { toast } from '../../store/useToastStore';
 
 interface KeypadButton {
   digit: string;
@@ -45,6 +46,7 @@ export const VoiceDialerView: React.FC = () => {
     isSpeaker,
     isDialing,
     callError,
+    voiceStatus,
     setDialerNumber,
     appendToDialer,
     backspaceDialer,
@@ -88,9 +90,16 @@ export const VoiceDialerView: React.FC = () => {
     appendToDialer(digit);
   };
 
-  const handleCall = () => {
+  const handleCall = async () => {
     if (!dialerNumber.trim()) return;
-    startCall(dialerNumber);
+    const target = dialerNumber.trim();
+    await startCall(target);
+    const err = useCellularServicesStore.getState().callError;
+    if (err) {
+      toast.error('Call Failed', err);
+    } else {
+      toast.success('Dialing Call', `Initiated call to ${target} via router modem.`);
+    }
   };
 
   return (
@@ -249,8 +258,8 @@ export const VoiceDialerView: React.FC = () => {
           </div>
 
           <div className="text-[11px] font-mono text-slate-400 sm:text-right">
-            <div>MSISDN: <span className="text-slate-200 font-semibold">+94 77 123 4567</span></div>
-            <div className="text-[10px] text-slate-400">Quectel RG500Q-EA Audio DSP</div>
+            <div>MSISDN: <span className="text-slate-200 font-semibold">{voiceStatus?.msisdn || 'SIM Provisioned'}</span></div>
+            <div className="text-[10px] text-slate-400">Modem Audio DSP</div>
           </div>
         </div>
 

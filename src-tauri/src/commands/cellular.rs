@@ -867,7 +867,11 @@ if [ -n "$PORT" ]; then
     printf 'AT+CPMS="SM","SM","SM"\r\n' > "$PORT" 2>/dev/null
     sleep 0.2
     printf "AT+CMGL=\"ALL\"\r\n" > "$PORT" 2>/dev/null
-    sleep 2.0
+    sleep 1.0
+    printf 'AT+CPMS="ME","ME","ME"\r\n' > "$PORT" 2>/dev/null
+    sleep 0.2
+    printf "AT+CMGL=\"ALL\"\r\n" > "$PORT" 2>/dev/null
+    sleep 1.5
     kill -9 $PID 2>/dev/null || true
     echo "===BEGIN_AT_SMS==="
     cat "$TMP"
@@ -1090,8 +1094,8 @@ pub fn send_sms_message(
 ) -> Result<Value, String> {
     let session = create_session(&profile)?;
 
-    let clean_num = number.trim().replace(['"', '\''], "");
-    let clean_text = text.trim().replace(['"'], "\\\"").replace(['\''], "\\'");
+    let clean_num = number.trim().replace([' ', '-', '(', ')', '"', '\'', ';', '`', '$', '&'], "");
+    let clean_text = text.trim().replace('\\', "\\\\").replace('"', "\\\"").replace('$', "\\$").replace('`', "\\`");
 
     let send_script = format!(
         r#"
@@ -1103,8 +1107,8 @@ for p in /dev/ttyUSB2 /dev/ttyUSB3 /dev/ttyUSB1 /dev/ttyACM0 /dev/mhi_DUN /dev/s
     fi
 done
 
-NUM='{}'
-TXT='{}'
+NUM="{}"
+TXT="{}"
 
 # 1. Try mmcli
 if which mmcli >/dev/null 2>&1; then
@@ -1153,7 +1157,7 @@ if [ -n "$PORT" ]; then
     sleep 0.2
     printf "AT+CMGS=\"%s\"\r\n" "$NUM" > "$PORT" 2>/dev/null
     sleep 0.5
-    printf "%s\x1A" "$TXT" > "$PORT" 2>/dev/null
+    printf "%s\032" "$TXT" > "$PORT" 2>/dev/null
     sleep 3.5
     kill -9 $PID 2>/dev/null || true
     OUT=$(cat "$TMP")
@@ -1298,12 +1302,14 @@ if [ -n "$PORT" ]; then
     # Terminate any hung USSD session first
     printf "AT+CUSD=2\r\n" > "$PORT" 2>/dev/null
     sleep 0.2
-    # Initiate USSD request
+    # Initiate USSD request (with and without DCS parameter for universal modem support)
     printf "AT+CUSD=1,\"%s\",15\r\n" "$CODE" > "$PORT" 2>/dev/null
+    sleep 0.3
+    printf "AT+CUSD=1,\"%s\"\r\n" "$CODE" > "$PORT" 2>/dev/null
     
-    # Wait up to 7 seconds for network operator to respond with +CUSD:
+    # Wait up to 8 seconds for network operator to respond with +CUSD:
     COUNT=0
-    while [ $COUNT -lt 70 ]; do
+    while [ $COUNT -lt 80 ]; do
         sleep 0.1
         if grep -q "+CUSD:" "$TMP" 2>/dev/null; then
             sleep 0.3
@@ -1553,7 +1559,7 @@ fi
     let mut in_call = false;
     let mut active_caller = String::new();
     let mut msisdn = String::new();
-    let mut smsc = "+9477000003".to_string();
+    let mut smsc = String::new();
     let mut sim_ready = false;
 
     for line in raw_output.lines() {
@@ -1589,7 +1595,7 @@ fi
         "codec": "AMR-WB (VoLTE HD Voice)",
         "emergencyCallsOnly": false,
         "msisdn": if !msisdn.is_empty() { Some(msisdn) } else { None },
-        "smsCenter": smsc,
+        "smsCenter": if !smsc.is_empty() { Some(smsc) } else { None },
         "simStorage": {
             "used": 0,
             "total": 50,

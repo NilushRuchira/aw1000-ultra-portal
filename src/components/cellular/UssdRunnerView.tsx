@@ -10,6 +10,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useCellularServicesStore } from '../../store/useCellularServicesStore';
+import { toast } from '../../store/useToastStore';
 import { USSD_SHORTCUTS } from '../../services/cellularServicesBridge';
 import type { UssdShortcut } from '../../types/cellularServices';
 
@@ -27,17 +28,28 @@ export const UssdRunnerView: React.FC = () => {
 
   const [replyInput, setReplyInput] = useState('');
 
-  const handleExecute = (codeToRun?: string) => {
+  const handleExecute = async (codeToRun?: string) => {
     const code = codeToRun || ussdInput;
     if (!code.trim()) return;
-    runUssd(code);
+    await runUssd(code);
+    const err = useCellularServicesStore.getState().ussdError;
+    if (err) {
+      toast.error('USSD Failed', err);
+    } else {
+      toast.success('USSD Received', `Response received for code ${code}`);
+    }
   };
 
-  const handleReply = (e: React.FormEvent) => {
+  const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyInput.trim()) return;
-    runUssd(replyInput);
+    const sent = replyInput;
     setReplyInput('');
+    await runUssd(sent);
+    const err = useCellularServicesStore.getState().ussdError;
+    if (err) {
+      toast.error('USSD Reply Failed', err);
+    }
   };
 
   const handleShortcutClick = (shortcut: UssdShortcut) => {

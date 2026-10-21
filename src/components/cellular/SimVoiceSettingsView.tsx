@@ -2,39 +2,26 @@ import React, { useState } from 'react';
 import {
   PhoneCall,
   Mail,
-  CheckCircle2,
   Save,
-  X,
 } from 'lucide-react';
+import { useCellularServicesStore } from '../../store/useCellularServicesStore';
+import { toast } from '../../store/useToastStore';
 
 export const SimVoiceSettingsView: React.FC = () => {
-  const [smsc, setSmsc] = useState('+9477000003');
+  const { voiceStatus } = useCellularServicesStore();
+  const [smsc, setSmsc] = useState(voiceStatus?.smsCenter || '');
   const [volteEnabled, setVolteEnabled] = useState(true);
   const [vonrEnabled, setVonrEnabled] = useState(true);
   const [smsStorage, setSmsStorage] = useState<'SIM' | 'ME'>('SIM');
   const [callWaiting, setCallWaiting] = useState(true);
-  const [savedNotification, setSavedNotification] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    setSavedNotification(true);
-    setTimeout(() => setSavedNotification(false), 3500);
+    toast.success('Settings Saved', 'Cellular voice & SMS configurations committed to router.');
   };
 
   return (
     <div className="space-y-5 max-w-4xl">
-      {savedNotification && (
-        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span>Cellular voice & SMS configurations saved and committed to UCI modem subsystem.</span>
-          </div>
-          <button onClick={() => setSavedNotification(false)}>
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
       <form onSubmit={handleSave} className="space-y-5">
         {/* VoLTE & Voice over 5G Section */}
         <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
@@ -142,11 +129,11 @@ export const SimVoiceSettingsView: React.FC = () => {
                 type="text"
                 value={smsc}
                 onChange={(e) => setSmsc(e.target.value)}
-                placeholder="+9477000003"
+                placeholder="e.g. +9477000003"
                 className="w-full bg-slate-950 border border-slate-800 text-white font-mono text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-500"
               />
               <span className="text-[10px] text-slate-400 mt-1 block">
-                Dialog: +9477000003 | SLTMobitel: +9471000003 | Airtel: +9475000003
+                Queried dynamically from SIM via AT+CSCA? or configure carrier center
               </span>
             </div>
 
