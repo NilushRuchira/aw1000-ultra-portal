@@ -5,6 +5,7 @@ import { Sidebar } from './components/layout/Sidebar';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { OverviewTab } from './components/dashboard/OverviewTab';
 import { NetworkConfigTab } from './components/network/NetworkConfigTab';
+import { CellularServicesTab } from './components/cellular/CellularServicesTab';
 import { WifiManagementTab } from './components/wifi/WifiManagementTab';
 import { ConnectedDevicesTab } from './components/devices/ConnectedDevicesTab';
 import { TerminalDiagnosticsTab } from './components/terminal/TerminalDiagnosticsTab';
@@ -48,6 +49,8 @@ const RouterPortalApp: React.FC = () => {
         return <OverviewTab />;
       case 'network':
         return <NetworkConfigTab />;
+      case 'cellular':
+        return <CellularServicesTab />;
       case 'wifi':
         return <WifiManagementTab />;
       case 'devices':

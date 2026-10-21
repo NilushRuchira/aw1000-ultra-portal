@@ -3,7 +3,7 @@ import type { SystemInfo, WanInfo, WifiSSID, ConnectedDevice } from '../types/ro
 import { routerApi, mockRouter } from '../services/tauriBridge';
 import { useProfileStore } from './useProfileStore';
 
-export type NavigationTab = 'overview' | 'network' | 'wifi' | 'devices' | 'terminal' | 'diagnostics' | 'logs' | 'settings';
+export type NavigationTab = 'overview' | 'network' | 'cellular' | 'wifi' | 'devices' | 'terminal' | 'diagnostics' | 'logs' | 'settings';
 
 export interface TelemetryPoint {
   time: string;
